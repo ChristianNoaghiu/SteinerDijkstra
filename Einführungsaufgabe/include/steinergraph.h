@@ -3,40 +3,43 @@
 #include <iostream>
 #include <vector>
 
-class SteinerGraph {
+class SteinerGraph
+{
 public:
-  using NodeId = int;  // vertices are numbered 0,...,num_nodes()-1
+  using NodeId = int; // vertices are numbered 0,...,num_nodes()-1
 
-  class Neighbor {
+  class Neighbor
+  {
   public:
-        Neighbor(SteinerGraph::NodeId n, double w);
-        double edge_weight() const;
-        SteinerGraph::NodeId id() const;
-  private:
-        SteinerGraph::NodeId _id;
-        double _edge_weight;
-    };
+    Neighbor(SteinerGraph::NodeId n, double w);
+    double edge_weight() const;
+    SteinerGraph::NodeId id() const;
 
-  class Node {
+  private:
+    SteinerGraph::NodeId _id;
+    double _edge_weight;
+  };
+
+  class Node
+  {
   public:
-        void add_neighbor(SteinerGraph::NodeId nodeid, double weight);
-        const std::vector<Neighbor> & adjacent_nodes() const;
-  private:
-        std::vector<Neighbor> _neighbors;
-    };
+    void add_neighbor(SteinerGraph::NodeId nodeid, double weight);
+    const std::vector<Neighbor> &adjacent_nodes() const;
 
-  enum DirType {directed, undirected};  // enum defines a type with possible values
-  SteinerGraph(NodeId num_nodes, DirType dirtype);
-  SteinerGraph(char const* filename, DirType dirtype);
+  private:
+    std::vector<Neighbor> _neighbors;
+  };
+
+  SteinerGraph(NodeId num_nodes);
+  SteinerGraph(char const *filename);
 
   void add_nodes(NodeId num_new_nodes);
   void add_edge(NodeId tail, NodeId head, double weight = 1.0);
 
   NodeId num_nodes() const;
-  const Node & get_node(NodeId) const;
+  const Node &get_node(NodeId) const;
   void print() const;
 
-  const DirType dirtype;
   static const NodeId invalid_node;
   static const double infinite_weight;
 
