@@ -38,7 +38,33 @@ void SteinerGraph::add_nodes(NodeId num_new_nodes)
    _nodes.resize(num_nodes() + num_new_nodes);
 }
 
-SteinerGraph::Neighbor::Neighbor(SteinerGraph::NodeId n, double w) : _id(n), _edge_weight(w) {}
+void SteinerGraph::add_terminal(NodeId new_terminal)
+{
+   if (new_terminal >= num_nodes() or new_terminal < 0)
+   {
+      throw std::runtime_error("Terminalstatus of Node cannot be changed due to undefined node");
+   }
+   _terminals.push_back(new_terminal);
+   for (NodeId i = 0; i < _nodes.size(); i++)
+   {
+      for (NodeId k = 0; k < _nodes[i].adjacent_nodes().size(); k++)
+      {
+         _nodes[i].find_to_setTerminal(k);
+      }
+   }
+}
+
+void SteinerGraph::Node::find_to_setTerminal(NodeId node)
+{
+   _neighbors[node].setTerminal();
+}
+
+void SteinerGraph::Neighbor::setTerminal()
+{
+   _terminal = true;
+}
+
+SteinerGraph::Neighbor::Neighbor(SteinerGraph::NodeId n, double w, bool t) : _id(n), _edge_weight(w), _terminal(t) {}
 
 SteinerGraph::SteinerGraph(NodeId num) : _nodes(num) {}
 
@@ -52,9 +78,9 @@ void SteinerGraph::add_edge(NodeId tail, NodeId head, double weight)
    _nodes[head].add_neighbor(tail, weight);
 }
 
-void SteinerGraph::Node::add_neighbor(SteinerGraph::NodeId nodeid, double weight)
+void SteinerGraph::Node::add_neighbor(SteinerGraph::NodeId nodeid, double weight, bool terminal = false)
 {
-   _neighbors.push_back(SteinerGraph::Neighbor(nodeid, weight));
+   _neighbors.push_back(SteinerGraph::Neighbor(nodeid, weight, terminal));
 }
 
 const std::vector<SteinerGraph::Neighbor> &SteinerGraph::Node::adjacent_nodes() const
@@ -81,6 +107,11 @@ SteinerGraph::NodeId SteinerGraph::Neighbor::id() const
    return _id;
 }
 
+bool SteinerGraph::Neighbor::isTerminal() const
+{
+   return _terminal;
+}
+
 double SteinerGraph::Neighbor::edge_weight() const
 {
    return _edge_weight;
@@ -104,7 +135,7 @@ void SteinerGraph::print() const
    }
 }
 
-SteinerGraph::SteinerGraph(char const *filename) // Initialisierungsfunktion der Klasse   -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+SteinerGraph::SteinerGraph(char const *filename) // Konstruktor der Klasse   -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
 {
    std::ifstream file(filename); // open file
    if (not file)
@@ -129,7 +160,7 @@ SteinerGraph::SteinerGraph(char const *filename) // Initialisierungsfunktion der
    bool reached_eof = false;
 
    int num_nodes = -1, num_edges = -1; // es fehlen noch die error-catches, falls die Zahlen zu groß werden, auch wenn das sehr unrealistisch ist...
-   unsigned int edge_counter;
+   unsigned int edge_counter = 0;
 
    while (std::getline(file, line))
    {
@@ -150,7 +181,7 @@ SteinerGraph::SteinerGraph(char const *filename) // Initialisierungsfunktion der
 
       if (current_section == NoSection) //                                                      check if section != NoSection has a new beginning of a Section, meaning, that an "END" was missing
       {
-         //                                                                                  check if new section begins here
+         //                                                                                  auslagern
          if (line == stp_section_comment_line)
          {
             current_section = CommentSection;
@@ -159,7 +190,19 @@ SteinerGraph::SteinerGraph(char const *filename) // Initialisierungsfunktion der
          {
             current_section = GraphSection;
          }
-         if (line != stp_empty_line) //                                                         what if there is the start of a new section in this line?
+         if (line == stp_section_terminals_line)
+         {
+            current_section = TerminalsSection;
+         }
+         if (line == stp_section_maximumdegrees_line)
+         {
+            current_section = MaximumDegreesSection;
+         }
+         if (line == stp_section_coordinates_line)
+         {
+            current_section = CoordinatesSection;
+         }
+         if (line != stp_empty_line)
          {
             throw std::runtime_error("Invalid STP file: Found non-empty line outside section.");
          }
@@ -167,10 +210,10 @@ SteinerGraph::SteinerGraph(char const *filename) // Initialisierungsfunktion der
       }
       else
       {
-         if (current_section == CommentSection)
+         if (current_section == CommentSection or current_section == MaximumDegreesSection or current_section == CoordinatesSection)
          {
-            if (line == "END")
-            { // Checking if the Commentsection ends here, since nothing is done with the contents
+            if (line == "END") // Checking if the Section ends here, since nothing is done with the contents
+            {
                current_section = NoSection;
             }
             continue;
@@ -179,7 +222,7 @@ SteinerGraph::SteinerGraph(char const *filename) // Initialisierungsfunktion der
          std::string keyword = "";
 
          ss >> keyword;
-         if (current_section == GraphSection) // Outsource this part into a couple of functions
+         if (current_section == GraphSection) // Outsource this part into a separate function(s)
          {
             if (keyword == stp_graph_nodes_keyword)
             {
@@ -187,8 +230,8 @@ SteinerGraph::SteinerGraph(char const *filename) // Initialisierungsfunktion der
                {
                   throw std::runtime_error("Invalid STP file: Contains 'Nodes' keyword more than once.");
                }
-               ss >> num_nodes;
-               add_nodes(num_nodes);
+               ss >> num_nodes;      // überprüfen ob num_nodes >= 0 ist?
+               add_nodes(num_nodes); // Idee für das auslagern, dieser part bleibt in dieser Funktion, wird aber erst ganz am Ende (bei "End" zum Graphen hinzugefügt)
             }
             else if (keyword == stp_graph_edges_keyword)
             {
@@ -196,13 +239,14 @@ SteinerGraph::SteinerGraph(char const *filename) // Initialisierungsfunktion der
                {
                   throw std::runtime_error("Invalid STP file: Contains 'Nodes' keyword more than once.");
                }
-               ss >> num_edges;
+               ss >> num_edges; // überprüfen ob num_edges >= 0 ist?
             }
-            else if (keyword == stp_graph_edge_keyword) // Es fehlt noch der Zähler für die Kanten und der error, wenn es mehr Kanten werden als vorher angegeben, oder letztendlich zu wenige sind
+            else if (keyword == stp_graph_edge_keyword)
             {
-               int head = -1, tail = -1;
+               int head = -1, tail = -1; // Idee für das auslagern, dieser part bleibt in dieser Funktion und kante wird hinzugefügt, falls beide ungleich -1 sind
                double weight = 0.0;
                ss >> head >> tail >> weight;
+               edge_counter++;
 
                if (tail != head)
                {
@@ -211,6 +255,21 @@ SteinerGraph::SteinerGraph(char const *filename) // Initialisierungsfunktion der
                else
                {
                   throw std::runtime_error("Invalid STP file: Loops are not allowed.");
+               }
+            }
+            else if (keyword == "END")
+            {
+               if (num_edges == -1)
+               {
+                  throw std::runtime_error("Invalid STP file: The number of edges have not been specified");
+               }
+               if (edge_counter != num_edges)
+               {
+                  throw std::runtime_error("Invalid STP file: The specified number of edges doesn't match the edgecount.");
+               }
+               if (num_nodes == -1)
+               {
+                  throw std::runtime_error("Invalid STP file: The number of nodes have not been specified");
                }
             }
          }
