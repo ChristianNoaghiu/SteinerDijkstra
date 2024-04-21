@@ -95,9 +95,10 @@ SteinerGraph::SteinerGraph(char const *filename)
    const std::string stp_section_comment_line = "SECTION Comment";
    const std::string stp_section_graph_line = "SECTION Graph";
    const std::string stp_eof_line = "EOF";
-   const std::string stp_empty_line = "EOF";
+   const std::string stp_empty_line = "EOF"; // Isn't this line supposed to be empty according to the name?
 
    const std::string stp_graph_nodes_keyword = "Nodes";
+   const std::string stp_graph_edges_keyword = "Edges";
    const std::string stp_graph_edge_keyword = "E";
 
    if (line != stp_control_line)
@@ -108,9 +109,9 @@ SteinerGraph::SteinerGraph(char const *filename)
    enum STPSection
    {
       NoSection = -1,
-      CommentSection = 0,
-      GraphSection = 1,
-      TerminalsSection = 2,
+      CommentSection = 0,   // skip through and don't do anything
+      GraphSection = 1,     // defines the graph
+      TerminalsSection = 2, // saves the terminals in the terminals-section
       MaximumDegreesSection = 3,
       CoordinatesSection = 4
    };
@@ -122,6 +123,7 @@ SteinerGraph::SteinerGraph(char const *filename)
    bool reached_eof = false;
 
    int num_nodes = -1, num_edges = -1;
+   unsigned int edge_counter;
 
    while (std::getline(file, line))
    {
@@ -130,37 +132,40 @@ SteinerGraph::SteinerGraph(char const *filename)
          throw std::runtime_error("Invalid STP file: Reached 'EOF' before end of file.");
       }
 
-      std::getline(file, line);
-
       if (line == stp_eof_line)
       {
          if (current_section != NoSection)
          {
             throw std::runtime_error("Invalid STP file: Reached 'EOF' before section was closed.");
          }
-
          reached_eof = true;
-
          continue;
       }
 
-      if (current_section == NoSection)
+      if (current_section == NoSection) //                                                      check if section != NoSection has a new beginning of a Section, meaning, that an "END" was missing
       {
-         if (line != stp_empty_line)
+         //                                                                                     check if new section begins here
+         if (line != stp_empty_line) //                                                         what if there is the start of a new section in this line?
          {
             throw std::runtime_error("Invalid STP file: Found non-empty line outside section.");
          }
-
          continue;
       }
       else
       {
+         if (current_section == CommentSection)
+         {
+            if (line == "END")
+            { // Checking if the Commentsection ends here, since nothing is done with the contents
+               current_section = NoSection;
+            }
+            continue;
+         }
          std::stringstream ss(line);
          std::string keyword = "";
 
          ss >> keyword;
-
-         if (current_section == GraphSection)
+         if (current_section == GraphSection) // Outsource this part into a couple of functions
          {
             if (keyword == stp_graph_nodes_keyword)
             {
@@ -169,8 +174,17 @@ SteinerGraph::SteinerGraph(char const *filename)
                   throw std::runtime_error("Invalid STP file: Contains 'Nodes' keyword more than once.");
                }
                ss >> num_nodes;
+               add_nodes(num_nodes);
             }
-            else if (keyword == stp_graph_edge_keyword)
+            else if (keyword == stp_graph_edges_keyword)
+            {
+               if (num_nodes != -1)
+               {
+                  throw std::runtime_error("Invalid STP file: Contains 'Nodes' keyword more than once.");
+               }
+               ss >> num_edges;
+            }
+            else if (keyword == stp_graph_edge_keyword) // Es fehlt noch der Zähler für die Kanten und der error, wenn es mehr Kanten werden als vorher angegeben, oder letztendlich zu wenige sind
             {
                int head = -1, tail = -1;
                double weight = 0.0;
@@ -187,7 +201,7 @@ SteinerGraph::SteinerGraph(char const *filename)
             }
          }
       }
-   }
+   } // -   -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
 
    if (!reached_eof)
    {
