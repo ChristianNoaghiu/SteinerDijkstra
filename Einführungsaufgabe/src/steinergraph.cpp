@@ -13,11 +13,15 @@ namespace
    const std::string stp_section_maximumdegrees_line = "SECTION MaximumDegrees";
    const std::string stp_section_coordinates_line = "SECTION Coordinates";
    const std::string stp_eof_line = "EOF";
+   const std::string stp_end_line = "END";
    const std::string stp_empty_line = "EOF"; // Isn't this line supposed to be empty according to the name?
 
    const std::string stp_graph_nodes_keyword = "Nodes";
    const std::string stp_graph_edges_keyword = "Edges";
    const std::string stp_graph_edge_keyword = "E";
+
+   const std::string stp_terminals_terminals_keyword = "Terminals";
+   const std::string stp_terminals_terminal_keyword = "T";
 
    enum STPSection
    {
@@ -159,21 +163,21 @@ SteinerGraph::SteinerGraph(char const *filename) // Konstruktor der Klasse   -  
    bool reached_section_graph = false;
    bool reached_eof = false;
 
-   int num_nodes = -1, num_edges = -1; // es fehlen noch die error-catches, falls die Zahlen zu groß werden, auch wenn das sehr unrealistisch ist...
-   unsigned int edge_counter = 0;
+   int num_nodes = -1, num_edges = -1, num_terminals = -1; // es fehlen noch die error-catches, falls die Zahlen zu groß werden, auch wenn das sehr unrealistisch ist...
+   unsigned int edge_counter = 0, terminal_counter = 0;
 
    while (std::getline(file, line))
    {
       if (reached_eof)
       {
-         throw std::runtime_error("Invalid STP file: Reached 'EOF' before end of file.");
+         throw std::runtime_error("Invalid STP file: Reached '" + stp_eof_line + "' before end of file.");
       }
 
       if (line == stp_eof_line)
       {
          if (current_section != NoSection)
          {
-            throw std::runtime_error("Invalid STP file: Reached 'EOF' before section was closed.");
+            throw std::runtime_error("Invalid STP file: Reached '" + stp_eof_line + "' before section was closed.");
          }
          reached_eof = true;
          continue;
@@ -212,7 +216,7 @@ SteinerGraph::SteinerGraph(char const *filename) // Konstruktor der Klasse   -  
       {
          if (current_section == CommentSection or current_section == MaximumDegreesSection or current_section == CoordinatesSection)
          {
-            if (line == "END") // Checking if the Section ends here, since nothing is done with the contents
+            if (line == stp_end_line) // Checking if the Section ends here, since nothing is done with the contents
             {
                current_section = NoSection;
             }
@@ -257,7 +261,7 @@ SteinerGraph::SteinerGraph(char const *filename) // Konstruktor der Klasse   -  
                   throw std::runtime_error("Invalid STP file: Loops are not allowed.");
                }
             }
-            else if (keyword == "END")
+            else if (keyword == stp_end_line)
             {
                if (num_edges == -1)
                {
@@ -265,12 +269,43 @@ SteinerGraph::SteinerGraph(char const *filename) // Konstruktor der Klasse   -  
                }
                if (edge_counter != num_edges)
                {
-                  throw std::runtime_error("Invalid STP file: The specified number of edges doesn't match the edgecount.");
+                  throw std::runtime_error("Invalid STP file: The specified number of edges does not match the edgecount.");
                }
                if (num_nodes == -1)
                {
                   throw std::runtime_error("Invalid STP file: The number of nodes have not been specified");
                }
+               current_section = NoSection;
+            }
+         }
+         if (current_section == TerminalsSection)
+         {
+            if (keyword == stp_terminals_terminals_keyword)
+            {
+               if (num_terminals != -1)
+               {
+                  throw std::runtime_error("Invalid STP file: Contains 'Terminals' keyword more than once.");
+               }
+               ss >> num_terminals;
+            }
+            else if (keyword == stp_terminals_terminal_keyword)
+            {
+               int node = -1;
+               ss >> node;
+               terminal_counter++;
+               add_terminal(node);
+            }
+            else if (keyword == stp_end_line)
+            {
+               if (num_terminals == -1)
+               {
+                  throw std::runtime_error("Invalid STP file: The number of terminals has not been specified");
+               }
+               if (num_terminals != terminal_counter)
+               {
+                  throw std::runtime_error("Invalid STP file: The specified number of terminals does not match the terminalcount.");
+               }
+               current_section == NoSection;
             }
          }
       }
@@ -278,7 +313,7 @@ SteinerGraph::SteinerGraph(char const *filename) // Konstruktor der Klasse   -  
 
    if (!reached_eof)
    {
-      throw std::runtime_error("Invalid STP file: File does not end with 'EOF'.");
+      throw std::runtime_error("Invalid STP file: File does not end with '" + stp_eof_line + "'.");
    }
 
    std::stringstream ss(line); // convert line to a stringstream
