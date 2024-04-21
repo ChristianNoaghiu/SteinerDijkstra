@@ -4,6 +4,32 @@
 #include <limits>
 #include "steinergraph.h"
 
+namespace
+{
+   const std::string stp_control_line = "33D32945 STP File, STP Format Version 1.0";
+   const std::string stp_section_comment_line = "SECTION Comment";
+   const std::string stp_section_graph_line = "SECTION Graph";
+   const std::string stp_section_terminals_line = "SECTION Terminals";
+   const std::string stp_section_maximumdegrees_line = "SECTION MaximumDegrees";
+   const std::string stp_section_coordinates_line = "SECTION Coordinates";
+   const std::string stp_eof_line = "EOF";
+   const std::string stp_empty_line = "EOF"; // Isn't this line supposed to be empty according to the name?
+
+   const std::string stp_graph_nodes_keyword = "Nodes";
+   const std::string stp_graph_edges_keyword = "Edges";
+   const std::string stp_graph_edge_keyword = "E";
+
+   enum STPSection
+   {
+      NoSection = -1,
+      CommentSection = 0,   // skip through and don't do anything
+      GraphSection = 1,     // defines the graph
+      TerminalsSection = 2, // saves the terminals in the terminals-section
+      MaximumDegreesSection = 3,
+      CoordinatesSection = 4
+   };
+}
+
 const SteinerGraph::NodeId SteinerGraph::invalid_node = -1;
 const double SteinerGraph::infinite_weight = std::numeric_limits<double>::max();
 
@@ -78,7 +104,7 @@ void SteinerGraph::print() const
    }
 }
 
-SteinerGraph::SteinerGraph(char const *filename)
+SteinerGraph::SteinerGraph(char const *filename) // Initialisierungsfunktion der Klasse   -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
 {
    std::ifstream file(filename); // open file
    if (not file)
@@ -91,38 +117,18 @@ SteinerGraph::SteinerGraph(char const *filename)
    std::getline(file, line); // get first line of file
    std::cout << line << std::endl;
 
-   const std::string stp_control_line = "33D32945 STP File, STP Format Version 1.0";
-   const std::string stp_section_comment_line = "SECTION Comment";
-   const std::string stp_section_graph_line = "SECTION Graph";
-   const std::string stp_eof_line = "EOF";
-   const std::string stp_empty_line = "EOF"; // Isn't this line supposed to be empty according to the name?
-
-   const std::string stp_graph_nodes_keyword = "Nodes";
-   const std::string stp_graph_edges_keyword = "Edges";
-   const std::string stp_graph_edge_keyword = "E";
+   STPSection last_section = NoSection;
+   STPSection current_section = NoSection;
 
    if (line != stp_control_line)
    {
       throw std::runtime_error("Invalid STP file: Does not start with STP control line.");
    }
 
-   enum STPSection
-   {
-      NoSection = -1,
-      CommentSection = 0,   // skip through and don't do anything
-      GraphSection = 1,     // defines the graph
-      TerminalsSection = 2, // saves the terminals in the terminals-section
-      MaximumDegreesSection = 3,
-      CoordinatesSection = 4
-   };
-
-   STPSection last_section = NoSection;
-   STPSection current_section = NoSection;
-
    bool reached_section_graph = false;
    bool reached_eof = false;
 
-   int num_nodes = -1, num_edges = -1;
+   int num_nodes = -1, num_edges = -1; // es fehlen noch die error-catches, falls die Zahlen zu groß werden, auch wenn das sehr unrealistisch ist...
    unsigned int edge_counter;
 
    while (std::getline(file, line))
@@ -144,7 +150,15 @@ SteinerGraph::SteinerGraph(char const *filename)
 
       if (current_section == NoSection) //                                                      check if section != NoSection has a new beginning of a Section, meaning, that an "END" was missing
       {
-         //                                                                                     check if new section begins here
+         //                                                                                  check if new section begins here
+         if (line == stp_section_comment_line)
+         {
+            current_section = CommentSection;
+         }
+         if (line == stp_section_graph_line)
+         {
+            current_section = GraphSection;
+         }
          if (line != stp_empty_line) //                                                         what if there is the start of a new section in this line?
          {
             throw std::runtime_error("Invalid STP file: Found non-empty line outside section.");
