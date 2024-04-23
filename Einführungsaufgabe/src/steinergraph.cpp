@@ -48,27 +48,15 @@ void SteinerGraph::add_terminal(NodeId new_terminal)
    {
       throw std::runtime_error("Terminalstatus of Node cannot be changed due to undefined node");
    }
-   _terminals.push_back(new_terminal);
-   for (NodeId i = 0; i < _nodes.size(); i++)
-   {
-      for (NodeId k = 0; k < _nodes[i].adjacent_nodes().size(); k++)
-      {
-         _nodes[i].find_to_setTerminal(k);
-      }
-   }
+   _nodes[new_terminal].set_terminal();
 }
 
-void SteinerGraph::Node::find_to_setTerminal(NodeId node)
-{
-   _neighbors[node].setTerminal();
-}
-
-void SteinerGraph::Neighbor::setTerminal()
+void SteinerGraph::Node::set_terminal()
 {
    _terminal = true;
 }
 
-SteinerGraph::Neighbor::Neighbor(SteinerGraph::NodeId n, double w, bool t) : _id(n), _edge_weight(w), _terminal(t) {}
+SteinerGraph::Neighbor::Neighbor(SteinerGraph::NodeId n, double w) : _id(n), _edge_weight(w) {}
 
 SteinerGraph::SteinerGraph(NodeId num) : _nodes(num) {}
 
@@ -82,9 +70,9 @@ void SteinerGraph::add_edge(NodeId tail, NodeId head, double weight)
    _nodes[head].add_neighbor(tail, weight);
 }
 
-void SteinerGraph::Node::add_neighbor(SteinerGraph::NodeId nodeid, double weight, bool terminal = false)
+void SteinerGraph::Node::add_neighbor(SteinerGraph::NodeId nodeid, double weight)
 {
-   _neighbors.push_back(SteinerGraph::Neighbor(nodeid, weight, terminal));
+   _neighbors.push_back(SteinerGraph::Neighbor(nodeid, weight));
 }
 
 const std::vector<SteinerGraph::Neighbor> &SteinerGraph::Node::adjacent_nodes() const
@@ -111,7 +99,7 @@ SteinerGraph::NodeId SteinerGraph::Neighbor::id() const
    return _id;
 }
 
-bool SteinerGraph::Neighbor::isTerminal() const
+bool SteinerGraph::Node::is_terminal() const
 {
    return _terminal;
 }
