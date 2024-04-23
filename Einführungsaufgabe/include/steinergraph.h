@@ -11,27 +11,27 @@ public:
   class Neighbor
   {
   public:
-    Neighbor(SteinerGraph::NodeId n, double w, bool t);
+    Neighbor(SteinerGraph::NodeId n, double w);
     double edge_weight() const;
     SteinerGraph::NodeId id() const;
-    bool isTerminal() const;
-    void setTerminal();
 
   private:
     SteinerGraph::NodeId _id;
     double _edge_weight;
-    bool _terminal;
   };
 
   class Node
   {
   public:
-    void add_neighbor(SteinerGraph::NodeId nodeid, double weight, bool terminal = false);
+    void add_neighbor(SteinerGraph::NodeId nodeid, double weight);
     const std::vector<Neighbor> &adjacent_nodes() const;
-    void find_to_setTerminal(NodeId);
+
+    void set_terminal();
+    bool is_terminal() const;
 
   private:
     std::vector<Neighbor> _neighbors;
+    bool _terminal = false;
   };
 
   SteinerGraph(NodeId num_nodes);
@@ -50,5 +50,4 @@ public:
 
 private:
   std::vector<Node> _nodes;
-  std::vector<NodeId> _terminals;
 };
