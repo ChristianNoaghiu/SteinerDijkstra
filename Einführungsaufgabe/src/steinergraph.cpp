@@ -86,16 +86,15 @@ SteinerGraph::SteinerGraph(char const *filename)
       throw std::runtime_error("Cannot open file.");
    }
 
-   SteinerGraph::NodeId num = 0;
+   // SteinerGraph::NodeId num = 0;
    std::string line;
    std::getline(file, line); // get first line of file
-   std::cout << line << std::endl;
 
    const std::string stp_control_line = "33D32945 STP File, STP Format Version 1.0";
    const std::string stp_section_comment_line = "SECTION Comment";
    const std::string stp_section_graph_line = "SECTION Graph";
    const std::string stp_eof_line = "EOF";
-   const std::string stp_empty_line = "EOF";
+   const std::string stp_empty_line = "";
 
    const std::string stp_graph_nodes_keyword = "Nodes";
    const std::string stp_graph_edge_keyword = "E";
@@ -115,13 +114,13 @@ SteinerGraph::SteinerGraph(char const *filename)
       CoordinatesSection = 4
    };
 
-   STPSection last_section = NoSection;
+   // STPSection last_section = NoSection;
    STPSection current_section = NoSection;
 
-   bool reached_section_graph = false;
+   // bool reached_section_graph = false;
    bool reached_eof = false;
 
-   int num_nodes = -1, num_edges = -1;
+   int num_nodes = -1;
 
    while (std::getline(file, line))
    {
@@ -129,8 +128,6 @@ SteinerGraph::SteinerGraph(char const *filename)
       {
          throw std::runtime_error("Invalid STP file: Reached 'EOF' before end of file.");
       }
-
-      std::getline(file, line);
 
       if (line == stp_eof_line)
       {
@@ -192,33 +189,5 @@ SteinerGraph::SteinerGraph(char const *filename)
    if (!reached_eof)
    {
       throw std::runtime_error("Invalid STP file: File does not end with 'EOF'.");
-   }
-
-   std::stringstream ss(line); // convert line to a stringstream
-   ss >> num;                  // for which we can use >>
-   if (not ss)
-   {
-      throw std::runtime_error("Invalid file format.");
-   }
-
-   while (std::getline(file, line))
-   {
-      std::stringstream ss(line);
-      SteinerGraph::NodeId head, tail;
-      ss >> tail >> head;
-      if (not ss)
-      {
-         throw std::runtime_error("Invalid file format.");
-      }
-      double weight = 1.0;
-      ss >> weight;
-      if (tail != head)
-      {
-         add_edge(tail, head, weight);
-      }
-      else
-      {
-         throw std::runtime_error("Invalid file format: loops not allowed.");
-      }
    }
 }
