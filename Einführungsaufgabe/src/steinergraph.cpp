@@ -412,32 +412,4 @@ SteinerGraph::SteinerGraph(char const *filename) // Konstruktor der Klasse   -  
    {
       throw std::runtime_error("Invalid STP file: File does not end with '" + stp_eof_line + "'.");
    }
-
-   /*std::stringstream ss(line); // convert line to a stringstream
-   ss >> num;                  // for which we can use >>
-   if (not ss)
-   {
-      throw std::runtime_error("Invalid file format.");
-   }
-
-   while (std::getline(file, line))
-   {
-      std::stringstream ss(line);
-      SteinerGraph::NodeId head, tail;
-      ss >> tail >> head;
-      if (not ss)
-      {
-         throw std::runtime_error("Invalid file format.");
-      }
-      double weight = 1.0;
-      ss >> weight;
-      if (tail != head)
-      {
-         add_edge(tail, head, weight);
-      }
-      else
-      {
-         throw std::runtime_error("Invalid file format: loops not allowed.");
-      }
-   } */
 }
