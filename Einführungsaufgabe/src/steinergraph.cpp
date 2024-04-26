@@ -93,7 +93,7 @@ namespace
     * Checking for lines belonging to the graph-section.
     * The output-number tells which kind of information was in the line given.
     */
-   int graph_section(const std::string &_line, int &_num_nodes, int &_num_edges, int _head, int _tail, double &_weight, int &_edge_counter)
+   int graph_section(const std::string &_line, int &_num_nodes, int &_num_edges, int &_head, int &_tail, double &_weight, int &_edge_counter)
    {
       std::stringstream ss(_line);
       std::string _keyword = "";
@@ -365,7 +365,7 @@ SteinerGraph::SteinerGraph(char const *filename) // Konstruktor der Klasse   -  
                }
                else if (a == 2) // we ignore a == 1, since nothing is done with that information before we reach stp_end_line and compare it to the counter
                {
-                  add_edge(tail, head, weight); // --"--
+                  add_edge(tail - 1, head - 1, weight); // --"--
                   head = -1;
                   tail = -1;
                }
@@ -397,7 +397,7 @@ SteinerGraph::SteinerGraph(char const *filename) // Konstruktor der Klasse   -  
                int b = terminals_section(line, node, num_terminals, terminal_counter);
                if (b == 1)
                {
-                  add_terminal(node); // I don't think this can be outsourced, hence it's here
+                  add_terminal(node - 1); // I don't think this can be outsourced, hence it's here
                }
                else if (b == -1) // we ignore b == 0, since nothing is done with that information before the stp_end_line, where we check if it matches the counter
                {
