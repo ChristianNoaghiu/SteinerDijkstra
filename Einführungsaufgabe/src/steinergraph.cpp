@@ -14,7 +14,7 @@ namespace
    const std::string stp_section_coordinates_line = "SECTION Coordinates";
    const std::string stp_eof_line = "EOF";
    const std::string stp_end_line = "END";
-   const std::string stp_empty_line = "EOF"; // Isn't this line supposed to be empty according to the name?
+   const std::string stp_empty_line = ""; // Isn't this line supposed to be empty according to the name?
 
    const std::string stp_graph_nodes_keyword = "Nodes";
    const std::string stp_graph_edges_keyword = "Edges";
@@ -33,7 +33,7 @@ namespace
       CoordinatesSection = 4
    };
 
-   bool check_for_sections(STPSection &_section, STPSection &_last_section, const std::string &_line)
+   bool check_for_sections(STPSection &_section, STPSection &_last_section, const std::string &_line) // checking for beginnings of sections and checking if the order is right
    {
       if (_line == stp_section_comment_line)
       {
@@ -42,7 +42,7 @@ namespace
          {
             throw std::runtime_error("Invalid STP file: Sections are not ordered correctly.");
          }
-         _last_section = CommentSection;
+         _last_section = CommentSection; // This is only featured in the sections where nothing is done, since we don't differentiate them in the constructor
          return true;
       }
       else if (_line == stp_section_graph_line)
@@ -89,7 +89,11 @@ namespace
       }
    }
 
-   int graph_section(const std::string &_line, int &_num_nodes, int &_num_edges, int _head, int _tail, double &_weight, unsigned int &_edge_counter)
+   /**
+    * Checking for lines belonging to the graph-section.
+    * The output-number tells which kind of information was in the line given.
+    */
+   int graph_section(const std::string &_line, int &_num_nodes, int &_num_edges, int _head, int _tail, double &_weight, int &_edge_counter)
    {
       std::stringstream ss(_line);
       std::string _keyword = "";
@@ -128,12 +132,19 @@ namespace
          {
             throw std::runtime_error("Invalid STP file: Loops are not allowed.");
          }
+         if (_tail < 0 or _head < 0)
+         {
+            throw std::runtime_error("Invalid STP file: Edge-endpoints need to be defined/be greater or equal to zero.");
+         }
          return 2;
       }
       return -1;
    }
-
-   int terminals_section(const std::string &_line, int &_node, int &_num_terminals, unsigned int &_terminal_counter)
+   /**
+    * Checking for lines belonging to the terminals-section.
+    * The output-number tells which kind of information was in the line given.
+    */
+   int terminals_section(const std::string &_line, int &_node, int &_num_terminals, int &_terminal_counter)
    {
       std::stringstream ss(_line);
       std::string _keyword = "";
@@ -262,12 +273,12 @@ SteinerGraph::SteinerGraph(char const *filename) // Konstruktor der Klasse   -  
       throw std::runtime_error("Cannot open file.");
    }
 
-   SteinerGraph::NodeId num = 0;
+   // SteinerGraph::NodeId num = 0;
    std::string line;
    std::getline(file, line); // get first line of file
-   std::cout << line << std::endl;
+   // std::cout << line << std::endl;
 
-   STPSection last_section = NoSection;
+   STPSection last_section = NoSection; // Variables to save where we are in the file and if a new section is in the right order
    STPSection current_section = NoSection;
 
    if (line != stp_control_line)
@@ -275,16 +286,15 @@ SteinerGraph::SteinerGraph(char const *filename) // Konstruktor der Klasse   -  
       throw std::runtime_error("Invalid STP file: Does not start with STP control line.");
    }
 
-   bool reached_section_graph = false;
    bool reached_eof = false;
 
-   int num_nodes = -1, num_edges = -1, num_terminals = -1; // es fehlen noch die error-catches, falls die Zahlen zu groß werden, auch wenn das sehr unrealistisch ist...
-   unsigned int edge_counter = 0, terminal_counter = 0;
+   int num_nodes = -1, num_edges = -1, num_terminals = -1; // different variables for the read routines
+   int edge_counter = 0, terminal_counter = 0;
    int head = -1, tail = -1;
    double weight = 1.0;
    std::string keyword = "";
 
-   while (std::getline(file, line))
+   while (std::getline(file, line)) // while-loop that reads the file line by line
    {
       if (reached_eof)
       {
@@ -301,7 +311,7 @@ SteinerGraph::SteinerGraph(char const *filename) // Konstruktor der Klasse   -  
          continue;
       }
 
-      if (current_section == NoSection) //                                                      check if section != NoSection has a new beginning of a Section, meaning, that an "END" was missing
+      if (current_section == NoSection) // Checking if a new Section begins here
       {
          if (!(check_for_sections(current_section, last_section, line)))
          {
@@ -314,22 +324,21 @@ SteinerGraph::SteinerGraph(char const *filename) // Konstruktor der Klasse   -  
       }
       else
       {
-         if (check_for_sections(current_section, last_section, line))
+         if (check_for_sections(current_section, last_section, line)) // Checking if a Section wasn't closed, since a new Section was opened inside another one
          {
             throw std::runtime_error("Invalid STP file: Found beginning of new section inside of a section.");
          }
          if (current_section == CommentSection or current_section == MaximumDegreesSection or current_section == CoordinatesSection)
          {
-            if (line == stp_end_line) // Checking if the Section ends here, since nothing is done with the contents
+            if (line == stp_end_line) // Checking if the Section ends here and skip if not, since nothing is done with the contents
             {
                current_section = NoSection;
             }
             continue;
          }
-         // bool graph_section(const std::string &_line, int &_num_nodes, int &_num_edges, int _head, int _tail) wobei true für nodes und false für einzelne hinzzufügende Kanten steht
-         if (current_section == GraphSection)
+         if (current_section == GraphSection) // read-in routine for the graph section
          {
-            if (line == stp_end_line)
+            if (line == stp_end_line) // check if the section ends here and if everything needed was in it
             {
                if (num_edges == -1)
                {
@@ -347,16 +356,16 @@ SteinerGraph::SteinerGraph(char const *filename) // Konstruktor der Klasse   -  
                current_section = NoSection;
                continue;
             }
-            else
+            else // read-in of the graph section
             {
                int a = graph_section(line, num_nodes, num_edges, head, tail, weight, edge_counter);
                if (a == 0)
                {
-                  add_nodes(num_nodes);
+                  add_nodes(num_nodes); // I don't think this can be outsourced, that's why it's here
                }
-               else if (a == 1 and tail != -1 and head != -1)
+               else if (a == 2) // we ignore a == 1, since nothing is done with that information before we reach stp_end_line and compare it to the counter
                {
-                  add_edge(tail, head, weight);
+                  add_edge(tail, head, weight); // --"--
                   head = -1;
                   tail = -1;
                }
@@ -370,7 +379,7 @@ SteinerGraph::SteinerGraph(char const *filename) // Konstruktor der Klasse   -  
          if (current_section == TerminalsSection)
          {
             int node = -1;
-            if (line == stp_end_line)
+            if (line == stp_end_line) // check if the section ends here and if everything needed was in it
             {
                if (num_terminals == -1)
                {
@@ -381,16 +390,16 @@ SteinerGraph::SteinerGraph(char const *filename) // Konstruktor der Klasse   -  
                   throw std::runtime_error("Invalid STP file: The specified number of terminals does not match the terminalcount.");
                }
                last_section = TerminalsSection;
-               current_section == NoSection;
+               current_section = NoSection;
             }
-            else
+            else // read-in of the terminals section
             {
                int b = terminals_section(line, node, num_terminals, terminal_counter);
                if (b == 1)
                {
-                  add_terminal(node);
+                  add_terminal(node); // I don't think this can be outsourced, hence it's here
                }
-               else if (b == -1)
+               else if (b == -1) // we ignore b == 0, since nothing is done with that information before the stp_end_line, where we check if it matches the counter
                {
                   throw std::runtime_error("Invalid STP file: Invalid line in terminalssection.");
                }
