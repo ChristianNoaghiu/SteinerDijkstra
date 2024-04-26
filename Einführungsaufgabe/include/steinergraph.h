@@ -41,6 +41,8 @@ public:
   void add_edge(NodeId tail, NodeId head, double weight = 1.0);
   void add_terminal(NodeId new_terminal);
 
+  std::vector<NodeId> dijkstra(NodeId start_node);
+
   NodeId num_nodes() const;
   const Node &get_node(NodeId) const;
   void print() const;

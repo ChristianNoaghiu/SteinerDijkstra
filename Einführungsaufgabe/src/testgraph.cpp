@@ -7,6 +7,7 @@ int main(int argc, char *argv[])
     if (argc > 1)
     {
         SteinerGraph g(argv[1]);
+        g.dijkstra(0);
         g.print();
     }
 }

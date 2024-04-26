@@ -2,6 +2,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <limits>
+#include <queue>
 #include "steinergraph.h"
 
 namespace
@@ -412,4 +413,57 @@ SteinerGraph::SteinerGraph(char const *filename) // Konstruktor der Klasse   -  
    {
       throw std::runtime_error("Invalid STP file: File does not end with '" + stp_eof_line + "'.");
    }
+}
+
+std::vector<SteinerGraph::NodeId> SteinerGraph::dijkstra(NodeId start_node)
+{
+   // stores computed distances to nodes
+   // -1 encodes infinity
+   std::vector<NodeId> distances(num_nodes(), -1);
+   std::vector<bool> visited(num_nodes(), false);
+   distances.at(start_node) = 0;
+
+   auto distance_compare_function = [&distances](NodeId node1, NodeId node2)
+   {
+      bool is_node1_infinite = (distances.at(node1) == -1);
+      bool is_node2_infinite = (distances.at(node2) == -1);
+
+      bool are_both_nodes_finite = (!is_node1_infinite && !is_node2_infinite);
+      bool is_node1_bigger_node2 = (distances.at(node1) > distances.at(node2));
+
+      return (is_node1_infinite && !is_node2_infinite) ||
+             (are_both_nodes_finite && is_node1_bigger_node2);
+   };
+
+   std::priority_queue<NodeId, std::vector<NodeId>, decltype(distance_compare_function)>
+       dijkstra_queue(distance_compare_function);
+
+   dijkstra_queue.push(start_node);
+
+   while (!dijkstra_queue.empty())
+   {
+      NodeId current_node = dijkstra_queue.top();
+      int distance_to_current_node = distances.at(current_node);
+      visited.at(current_node) = true;
+
+      dijkstra_queue.pop();
+
+      for (auto neighbor : _nodes[current_node].adjacent_nodes())
+      {
+         if (visited.at(neighbor.id()))
+         {
+            continue;
+         }
+
+         int distance_to_neighbor = distances.at(neighbor.id());
+
+         if (distance_to_neighbor == -1 || distance_to_current_node + neighbor.edge_weight() < distance_to_neighbor)
+         {
+            distances.at(neighbor.id()) = distance_to_current_node + neighbor.edge_weight();
+            dijkstra_queue.push(neighbor.id());
+         }
+      }
+   }
+
+   return distances;
 }
