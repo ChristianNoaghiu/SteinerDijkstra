@@ -252,8 +252,25 @@ void SteinerGraph::print() const
 {
    std::cout << "SteinerGraph ";
 
+   int terminalcounter = 0;
+   std::vector<int> terminalliste;
+   for (auto nodeid = 0; nodeid < num_nodes(); ++nodeid) // here we count the Terminals and save them in a vector for their following output
+   {
+      if (_nodes[nodeid].is_terminal())
+      {
+         terminalcounter++;
+         terminalliste.push_back(nodeid);
+      }
+   }
+
    std::cout << "with " << num_nodes() << " vertices, numbered 0,...,"
-             << num_nodes() - 1 << ".\n";
+             << num_nodes() - 1 << " and " << terminalcounter << " terminals." << std::endl;
+   std::cout << "The terminals are the following nodes:" << std::endl;
+   for (int i = 0; i < terminalliste.size(); i++)
+   {
+      std::cout << terminalliste[i] << ", ";
+   }
+   std::cout << std::endl;
 
    for (auto nodeid = 0; nodeid < num_nodes(); ++nodeid)
    {
