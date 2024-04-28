@@ -41,7 +41,8 @@ public:
   void add_edge(NodeId tail, NodeId head, double weight = 1.0);
   void add_terminal(NodeId new_terminal);
 
-  std::vector<NodeId> dijkstra(NodeId start_node);
+  void dijkstra(const NodeId start_node, std::vector<int> &distances, std::vector<NodeId> &predecessors) const;
+  void metric_closure(std::vector<std::vector<int>> &distance_matrix, std::vector<std::vector<NodeId>> &predecessor_matrix) const;
 
   NodeId num_nodes() const;
   const Node &get_node(NodeId) const;
@@ -49,6 +50,7 @@ public:
 
   static const NodeId invalid_node;
   static const double infinite_weight;
+  static const int infinite_distance;
 
 private:
   std::vector<Node> _nodes;
