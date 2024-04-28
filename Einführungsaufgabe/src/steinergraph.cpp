@@ -266,7 +266,7 @@ void SteinerGraph::print() const
    std::cout << "with " << num_nodes() << " vertices, numbered 0,...,"
              << num_nodes() - 1 << " and " << terminalcounter << " terminals." << std::endl;
    std::cout << "The terminals are the following nodes:" << std::endl;
-   for (int i = 0; i < terminalliste.size(); i++)
+   for (unsigned int i = 0; i < terminalliste.size(); i++)
    {
       std::cout << terminalliste[i] << ", ";
    }

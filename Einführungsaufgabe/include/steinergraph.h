@@ -63,7 +63,7 @@ public:
   void print() const;
 
   static const NodeId invalid_node;
-  static const double infinite_weight;
+  static const int infinite_weight;
   static const int infinite_distance;
 
 private:
