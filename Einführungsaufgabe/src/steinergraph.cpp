@@ -93,7 +93,7 @@ namespace
     * Checking for lines belonging to the graph-section.
     * The output-number tells which kind of information was in the line given.
     */
-   int graph_section(const std::string &_line, int &_num_nodes, int &_num_edges, int &_head, int &_tail, double &_weight, int &_edge_counter)
+   int graph_section(const std::string &_line, int &_num_nodes, int &_num_edges, int &_head, int &_tail, int &_weight, int &_edge_counter)
    {
       std::stringstream ss(_line);
       std::string _keyword = "";
@@ -173,7 +173,7 @@ namespace
 }
 
 const SteinerGraph::NodeId SteinerGraph::invalid_node = -1;
-const double SteinerGraph::infinite_weight = std::numeric_limits<double>::max();
+const int SteinerGraph::infinite_weight = std::numeric_limits<int>::max();
 const int SteinerGraph::infinite_distance = -1;
 
 void SteinerGraph::add_nodes(NodeId num_new_nodes)
@@ -195,11 +195,11 @@ void SteinerGraph::Node::set_terminal()
    _terminal = true;
 }
 
-SteinerGraph::Neighbor::Neighbor(SteinerGraph::NodeId n, double w) : _id(n), _edge_weight(w) {}
+SteinerGraph::Neighbor::Neighbor(SteinerGraph::NodeId n, int w) : _id(n), _edge_weight(w) {}
 
 SteinerGraph::SteinerGraph(NodeId num) : _nodes(num) {}
 
-void SteinerGraph::add_edge(NodeId tail, NodeId head, double weight)
+void SteinerGraph::add_edge(NodeId tail, NodeId head, int weight)
 {
    if (tail >= num_nodes() or tail < 0 or head >= num_nodes() or head < 0)
    {
@@ -209,7 +209,7 @@ void SteinerGraph::add_edge(NodeId tail, NodeId head, double weight)
    _nodes[head].add_neighbor(tail, weight);
 }
 
-void SteinerGraph::Node::add_neighbor(SteinerGraph::NodeId nodeid, double weight)
+void SteinerGraph::Node::add_neighbor(SteinerGraph::NodeId nodeid, int weight)
 {
    _neighbors.push_back(SteinerGraph::Neighbor(nodeid, weight));
 }
@@ -243,7 +243,7 @@ bool SteinerGraph::Node::is_terminal() const
    return _terminal;
 }
 
-double SteinerGraph::Neighbor::edge_weight() const
+int SteinerGraph::Neighbor::edge_weight() const
 {
    return _edge_weight;
 }
@@ -252,8 +252,25 @@ void SteinerGraph::print() const
 {
    std::cout << "SteinerGraph ";
 
+   int terminalcounter = 0;
+   std::vector<int> terminalliste;
+   for (auto nodeid = 0; nodeid < num_nodes(); ++nodeid) // here we count the Terminals and save them in a vector for their following output
+   {
+      if (_nodes[nodeid].is_terminal())
+      {
+         terminalcounter++;
+         terminalliste.push_back(nodeid);
+      }
+   }
+
    std::cout << "with " << num_nodes() << " vertices, numbered 0,...,"
-             << num_nodes() - 1 << ".\n";
+             << num_nodes() - 1 << " and " << terminalcounter << " terminals." << std::endl;
+   std::cout << "The terminals are the following nodes:" << std::endl;
+   for (int i = 0; i < terminalliste.size(); i++)
+   {
+      std::cout << terminalliste[i] << ", ";
+   }
+   std::cout << std::endl;
 
    for (auto nodeid = 0; nodeid < num_nodes(); ++nodeid)
    {
@@ -307,7 +324,7 @@ SteinerGraph::SteinerGraph(char const *filename) // Konstruktor der Klasse   -  
    int num_nodes = -1, num_edges = -1, num_terminals = -1; // different variables for the read routines
    int edge_counter = 0, terminal_counter = 0;
    int head = -1, tail = -1;
-   double weight = 1.0;
+   int weight = 1;
    std::string keyword = "";
 
    while (std::getline(file, line)) // while-loop that reads the file line by line
