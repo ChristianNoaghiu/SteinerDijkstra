@@ -27,7 +27,7 @@ namespace
 }
 
 // computes distances to every node and stores these as well as
-// the predecessors on the respective path in distances/predecessors
+// the predecessors and their edge weights on the respective path in distances/predecessors
 void SteinerGraph::dijkstra(
     const NodeId start_node,
     std::vector<int> &distances,
@@ -65,7 +65,7 @@ void SteinerGraph::dijkstra(
         dijkstra_queue.pop();
 
         // iterate through his unvisited neighbors
-        for (auto neighbor : _nodes[current_node].adjacent_nodes())
+        for (auto neighbor : get_node(current_node).adjacent_nodes())
         {
             if (visited.at(neighbor.id()))
             {
@@ -100,6 +100,7 @@ void SteinerGraph::dijkstra(
 // stores the predecessors on the corresponding paths in predecessor_matrix
 // such that predecessor_matrix.at(i).at(j) is the predecessor
 // of j on the path from i to j
+// stores the corresponding edge weights in the path as well
 void SteinerGraph::metric_closure(
     std::vector<std::vector<int>> &distance_matrix,
     std::vector<std::vector<NodeId>> &predecessor_matrix,
