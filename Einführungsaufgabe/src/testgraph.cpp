@@ -8,11 +8,8 @@ int main(int argc, char *argv[])
     {
         SteinerGraph g(argv[1]);
 
-        std::vector<std::vector<int>> distance_matrix(g.num_nodes(), std::vector<int>(g.num_nodes()));
-        std::vector<std::vector<SteinerGraph::NodeId>> predecessor_matrix(g.num_nodes(), std::vector<SteinerGraph::NodeId>(g.num_nodes()));
+        SteinerGraph h = g.steiner_tree_mst_approximation();
 
-        g.metric_closure(distance_matrix, predecessor_matrix);
-
-        g.print();
+        h.print();
     }
 }

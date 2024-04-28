@@ -2,7 +2,6 @@
 #include <sstream>
 #include <stdexcept>
 #include <limits>
-#include <queue>
 #include "steinergraph.h"
 
 namespace
@@ -265,6 +264,21 @@ void SteinerGraph::print() const
                    << " weight = " << neighbor.edge_weight() << "\n";
       }
    }
+
+   int edge_weight_sum = 0;
+
+   for (auto nodeid = 0; nodeid < num_nodes(); ++nodeid)
+   {
+      for (auto neighbor : _nodes[nodeid].adjacent_nodes())
+      {
+         if (neighbor.id() > nodeid) // ensures that edge are counted only once
+         {
+            edge_weight_sum += neighbor.edge_weight();
+         }
+      }
+   }
+
+   std::cout << "\nSum of edge weights: " << edge_weight_sum << "\n";
 }
 
 SteinerGraph::SteinerGraph(char const *filename) // Konstruktor der Klasse   -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
@@ -413,75 +427,5 @@ SteinerGraph::SteinerGraph(char const *filename) // Konstruktor der Klasse   -  
    if (!reached_eof)
    {
       throw std::runtime_error("Invalid STP file: File does not end with '" + stp_eof_line + "'.");
-   }
-}
-
-void SteinerGraph::dijkstra(const NodeId start_node, std::vector<int> &distances, std::vector<NodeId> &predecessors) const
-{
-   // stores computed distances to nodes
-   // -1 encodes infinity
-   distances = std::vector<int>(num_nodes(), infinite_distance);
-   predecessors = std::vector<int>(num_nodes(), invalid_node);
-   std::vector<bool> visited(num_nodes(), false);
-   distances.at(start_node) = 0;
-
-   auto distance_compare_function = [&distances](NodeId node1, NodeId node2)
-   {
-      bool is_node1_infinite = (distances.at(node1) == infinite_distance);
-      bool is_node2_infinite = (distances.at(node2) == infinite_distance);
-
-      bool are_both_nodes_finite = (!is_node1_infinite && !is_node2_infinite);
-      bool is_node1_bigger_node2 = (distances.at(node1) > distances.at(node2));
-
-      return (is_node1_infinite && !is_node2_infinite) ||
-             (are_both_nodes_finite && is_node1_bigger_node2);
-   };
-
-   std::priority_queue<NodeId, std::vector<NodeId>, decltype(distance_compare_function)>
-       dijkstra_queue(distance_compare_function);
-
-   dijkstra_queue.push(start_node);
-
-   while (!dijkstra_queue.empty())
-   {
-      NodeId current_node = dijkstra_queue.top();
-      int distance_to_current_node = distances.at(current_node);
-      visited.at(current_node) = true;
-
-      dijkstra_queue.pop();
-
-      for (auto neighbor : _nodes[current_node].adjacent_nodes())
-      {
-         if (visited.at(neighbor.id()))
-         {
-            continue;
-         }
-
-         int distance_to_neighbor = distances.at(neighbor.id());
-
-         if (distance_to_neighbor == infinite_distance || distance_to_current_node + neighbor.edge_weight() < distance_to_neighbor)
-         {
-            distances.at(neighbor.id()) = distance_to_current_node + neighbor.edge_weight();
-            predecessors.at(neighbor.id()) = current_node;
-            dijkstra_queue.push(neighbor.id());
-         }
-      }
-   }
-}
-
-void SteinerGraph::metric_closure(std::vector<std::vector<int>> &distance_matrix, std::vector<std::vector<NodeId>> &predecessor_matrix) const
-{
-   distance_matrix = std::vector<std::vector<int>>();
-   predecessor_matrix = std::vector<std::vector<NodeId>>();
-
-   for (int i = 0; i < num_nodes(); i++)
-   {
-      std::vector<int> distances_from_i;
-      std::vector<int> predecessors_to_i;
-
-      dijkstra(i, distances_from_i, predecessors_to_i);
-
-      distance_matrix.push_back(distances_from_i);
-      predecessor_matrix.push_back(predecessors_to_i);
    }
 }
