@@ -254,7 +254,7 @@ void SteinerGraph::print() const
 
    int terminalcounter = 0;
    std::vector<int> terminalliste;
-   for (auto nodeid = 0; nodeid < num_nodes(); ++nodeid) // here we count the Terminals and save them in a vector for their following output
+   for (int nodeid = 0; nodeid < num_nodes(); ++nodeid) // here we count the Terminals and save them in a vector for their following output
    {
       if (get_node(nodeid).is_terminal())
       {
