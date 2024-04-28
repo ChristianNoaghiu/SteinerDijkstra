@@ -38,35 +38,23 @@ public:
   SteinerGraph(char const *filename);
 
   void add_nodes(NodeId num_new_nodes);
-  void add_edge(NodeId tail, NodeId head, double weight = 1.0);
+  void add_edge(NodeId tail, NodeId head, int weight = 1);
   void add_terminal(NodeId new_terminal);
 
   void dijkstra(
       const NodeId start_node,
       std::vector<int> &distances,
-      std::vector<NodeId> &predecessors)
+      std::vector<NodeId> &predecessors,
+      std::vector<int> &predecessor_weights)
       const;
 
   void metric_closure(
       std::vector<std::vector<int>> &distance_matrix,
-      std::vector<std::vector<NodeId>> &predecessor_matrix)
+      std::vector<std::vector<NodeId>> &predecessor_matrix,
+      std::vector<std::vector<int>> &predecessor_distance_matrix)
       const;
 
   NodeId find_terminal_node() const;
-
-  void terminal_rooted_mst(
-      const std::vector<std::vector<int>> &metric_closure_distance_matrix,
-      std::vector<NodeId> &predecessors)
-      const;
-
-  void add_path_to_steiner_tree_mst_approximation(
-      const NodeId &start_node,
-      const std::vector<std::vector<int>> &distance_matrix,
-      const std::vector<std::vector<NodeId>> &metric_closure_predecessor_matrix,
-      const std::vector<NodeId> &mst_predecessors,
-      std::vector<bool> &visited,
-      SteinerGraph &result_graph)
-      const;
 
   SteinerGraph steiner_tree_mst_approximation() const;
 
@@ -79,5 +67,19 @@ public:
   static const int infinite_distance;
 
 private:
+  void terminal_rooted_mst(
+      const std::vector<std::vector<int>> &metric_closure_distance_matrix,
+      std::vector<NodeId> &predecessors)
+      const;
+
+  void add_path_to_steiner_tree_mst_approximation(
+      const NodeId &start_node,
+      const std::vector<std::vector<NodeId>> &metric_closure_predecessor_matrix,
+      const std::vector<std::vector<int>> &metric_closure_predecessor_weight_matrix,
+      const std::vector<NodeId> &mst_predecessors,
+      std::vector<bool> &visited,
+      SteinerGraph &result_graph)
+      const;
+
   std::vector<Node> _nodes;
 };
