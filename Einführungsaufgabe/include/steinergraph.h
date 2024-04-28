@@ -11,19 +11,19 @@ public:
   class Neighbor
   {
   public:
-    Neighbor(SteinerGraph::NodeId n, double w);
-    double edge_weight() const;
+    Neighbor(SteinerGraph::NodeId n, int w);
+    int edge_weight() const;
     SteinerGraph::NodeId id() const;
 
   private:
     SteinerGraph::NodeId _id;
-    double _edge_weight;
+    int _edge_weight;
   };
 
   class Node
   {
   public:
-    void add_neighbor(SteinerGraph::NodeId nodeid, double weight);
+    void add_neighbor(SteinerGraph::NodeId nodeid, int weight);
     const std::vector<Neighbor> &adjacent_nodes() const;
 
     void set_terminal();
@@ -38,7 +38,7 @@ public:
   SteinerGraph(char const *filename);
 
   void add_nodes(NodeId num_new_nodes);
-  void add_edge(NodeId tail, NodeId head, double weight = 1.0);
+  void add_edge(NodeId tail, NodeId head, int weight = 1.0);
   void add_terminal(NodeId new_terminal);
 
   void dijkstra(
@@ -75,7 +75,7 @@ public:
   void print() const;
 
   static const NodeId invalid_node;
-  static const double infinite_weight;
+  static const int infinite_weight;
   static const int infinite_distance;
 
 private:
