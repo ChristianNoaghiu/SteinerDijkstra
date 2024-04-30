@@ -5,20 +5,28 @@
 
 namespace
 {
-    // returns a lambda which compares the distances of two nodes
-    // according to the current state of the provided distance vector
+    using NodeDistancePair = std::pair<SteinerGraph::NodeId, int>;
+
+    // returns a lambda which compares the distances of two NodeDistancePairs
+    // according to the second component
+
     std::function<bool(
-        const SteinerGraph::NodeId,
-        const SteinerGraph::NodeId)>
-    distance_compare_function(std::vector<int> &distances)
+        const NodeDistancePair,
+        const NodeDistancePair)>
+    node_distance_pair_compare()
     {
-        return [&distances](const SteinerGraph::NodeId node1, const SteinerGraph::NodeId node2)
+        return [](
+                   const NodeDistancePair &node_distance1,
+                   const NodeDistancePair &node_distance2)
         {
-            const bool is_node1_infinite = (distances.at(node1) == SteinerGraph::infinite_distance);
-            const bool is_node2_infinite = (distances.at(node2) == SteinerGraph::infinite_distance);
+            const int distance1 = node_distance1.second;
+            const int distance2 = node_distance2.second;
+
+            const bool is_node1_infinite = (distance1 == SteinerGraph::infinite_distance);
+            const bool is_node2_infinite = (distance2 == SteinerGraph::infinite_distance);
 
             const bool are_both_nodes_finite = (!is_node1_infinite && !is_node2_infinite);
-            const bool is_node1_bigger_node2 = (distances.at(node1) > distances.at(node2));
+            const bool is_node1_bigger_node2 = (distance1 > distance2);
 
             return (is_node1_infinite && !is_node2_infinite) ||
                    (are_both_nodes_finite && is_node1_bigger_node2);
@@ -43,26 +51,32 @@ void SteinerGraph::dijkstra(
     predecessors = std::vector<int>(num_nodes(), invalid_node);
     predecessor_weights = std::vector<int>(num_nodes(), infinite_weight);
 
-    auto compare_function = distance_compare_function(distances);
-    std::priority_queue<NodeId, std::vector<NodeId>, decltype(compare_function)>
+    auto compare_function = node_distance_pair_compare();
+    std::priority_queue<NodeDistancePair, std::vector<NodeDistancePair>, decltype(compare_function)>
         dijkstra_queue(compare_function);
 
-    // stores whether a node has been added to the Dijkstra queue
-    std::vector<bool> queued(num_nodes(), false);
     // stores whether a node has been removed from the Dijkstra queue
     std::vector<bool> visited(num_nodes(), false);
 
-    dijkstra_queue.push(start_node);
-    queued.at(start_node) = true;
+    dijkstra_queue.push(std::make_pair(start_node, distances.at(start_node)));
 
     while (!dijkstra_queue.empty())
     {
         // take the node with the currently smallest distance
-        const NodeId current_node = dijkstra_queue.top();
-        const int distance_to_current_node = distances.at(current_node);
-        visited.at(current_node) = true;
+        const NodeDistancePair current_node_distance = dijkstra_queue.top();
+        const NodeId current_node = current_node_distance.first;
 
         dijkstra_queue.pop();
+        if (visited.at(current_node))
+        {
+            // ensure that no vertex is visited twice
+            // (vertices can occur multiple times in the queue with
+            // different keys)
+            continue;
+        }
+        visited.at(current_node) = true;
+
+        const int distance_to_current_node = distances.at(current_node);
 
         // iterate through his unvisited neighbors
         for (auto neighbor : get_node(current_node).adjacent_nodes())
@@ -79,16 +93,15 @@ void SteinerGraph::dijkstra(
                 distance_to_current_node + neighbor.edge_weight() < distance_to_neighbor)
             {
                 // if yes, update the distance to the current neighbor
-                distances.at(neighbor.id()) = distance_to_current_node + neighbor.edge_weight();
+                int updated_distance = distance_to_current_node + neighbor.edge_weight();
+                distances.at(neighbor.id()) = updated_distance;
                 predecessors.at(neighbor.id()) = current_node;
                 predecessor_weights.at(neighbor.id()) = neighbor.edge_weight();
 
-                // queue the neighbor if this did not already happen
-                if (!queued.at(neighbor.id()))
-                {
-                    dijkstra_queue.push(neighbor.id());
-                    queued.at(neighbor.id()) = true;
-                }
+                // queue the neighbor
+                // possibly it is already queued with a larger key,
+                // but we have ensured above that no vertex is visited twice
+                dijkstra_queue.push(std::make_pair(neighbor.id(), updated_distance));
             }
         }
     }
@@ -175,20 +188,28 @@ void SteinerGraph::terminal_rooted_mst(
     // stores whether a node has been removed from the Prim queue
     std::vector<bool> visited(num_nodes(), false);
 
-    auto compare_function = distance_compare_function(distances);
-    std::priority_queue<NodeId, std::vector<NodeId>, decltype(compare_function)>
+    auto compare_function = node_distance_pair_compare();
+    std::priority_queue<NodeDistancePair, std::vector<NodeDistancePair>, decltype(compare_function)>
         prim_queue(compare_function);
 
-    prim_queue.push(start_node);
+    prim_queue.push(std::make_pair(start_node, distances.at(start_node)));
     queued.at(start_node) = true;
 
     // pick the node with the smallest edge leaving the current result subgraph
     while (!prim_queue.empty())
     {
-        const NodeId current_node = prim_queue.top();
-        visited.at(current_node) = true;
-
+        const NodeDistancePair current_node_distance = prim_queue.top();
+        const NodeId current_node = current_node_distance.first;
         prim_queue.pop();
+
+        if (visited.at(current_node))
+        {
+            // ensure that no vertex is visited twice
+            // (vertices can occur multiple times in the queue with
+            // different keys)
+            continue;
+        }
+        visited.at(current_node) = true;
 
         // iterate through all unvisited neighbors that are terminals
         for (NodeId neighbor_id = 0; neighbor_id < num_nodes(); neighbor_id++)
@@ -214,11 +235,7 @@ void SteinerGraph::terminal_rooted_mst(
                 distances.at(neighbor_id) = edge_weight_to_neighbor;
                 predecessors.at(neighbor_id) = current_node;
 
-                if (!queued.at(neighbor_id))
-                {
-                    prim_queue.push(neighbor_id);
-                    queued.at(neighbor_id) = true;
-                }
+                prim_queue.push(std::make_pair(neighbor_id, edge_weight_to_neighbor));
             }
         }
     }
