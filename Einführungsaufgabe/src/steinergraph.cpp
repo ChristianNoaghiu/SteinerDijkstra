@@ -200,6 +200,20 @@ SteinerGraph::Neighbor::Neighbor(SteinerGraph::NodeId n, int w) : _id(n), _edge_
 
 SteinerGraph::SteinerGraph(NodeId num) : _nodes(num) {}
 
+// returns a graph with the same nodes and terminals,
+// but without edges
+SteinerGraph SteinerGraph::clear_edges() const
+{
+   SteinerGraph result_graph(num_nodes());
+
+   for (NodeId terminal : _terminals)
+   {
+      result_graph.make_terminal(terminal);
+   }
+
+   return result_graph;
+}
+
 void SteinerGraph::add_edge(NodeId tail, NodeId head, int weight)
 {
    if (tail >= num_nodes() or tail < 0 or head >= num_nodes() or head < 0)

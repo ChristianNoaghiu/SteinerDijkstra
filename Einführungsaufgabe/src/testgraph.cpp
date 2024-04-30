@@ -12,7 +12,6 @@ int main(int argc, char *argv[])
         SteinerGraph h = g.steiner_tree_mst_approximation();
 
         std::cout << "-- Printing MST approximation for Steiner tree --\n\n";
-
         h.print();
     }
 }

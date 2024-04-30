@@ -107,6 +107,89 @@ void SteinerGraph::dijkstra(
     }
 }
 
+// computes a MST in the connected component of start_node
+// using Prim's algorithm
+SteinerGraph SteinerGraph::component_mst(
+    const NodeId start_node)
+    const
+{
+    if (num_nodes() == 0)
+    {
+        throw std::runtime_error("Graph has no vertices.");
+    }
+
+    if (start_node < 0 || start_node >= num_nodes())
+    {
+        throw std::runtime_error("Invalid start_node");
+    }
+
+    SteinerGraph result_graph = clear_edges();
+
+    // initialise the distances and predecessors
+    std::vector<int> distances(num_nodes(), infinite_distance);
+    distances.at(start_node) = 0;
+
+    std::vector<NodeId> predecessors(num_nodes(), invalid_node);
+
+    // stores whether a node has been removed from the Prim queue
+    std::vector<bool> visited(num_nodes(), false);
+
+    auto compare_function = node_distance_pair_compare();
+    std::priority_queue<NodeDistancePair, std::vector<NodeDistancePair>, decltype(compare_function)>
+        prim_queue(compare_function);
+
+    prim_queue.push(std::make_pair(start_node, distances.at(start_node)));
+
+    // pick the node with the smallest edge leaving the current result subgraph
+    while (!prim_queue.empty())
+    {
+        const NodeDistancePair current_node_distance = prim_queue.top();
+        const NodeId current_node = current_node_distance.first;
+        prim_queue.pop();
+
+        if (visited.at(current_node))
+        {
+            // ensure that no vertex is visited twice
+            // (vertices can occur multiple times in the queue with
+            // different keys)
+            continue;
+        }
+        visited.at(current_node) = true;
+
+        if (current_node != start_node)
+        {
+            result_graph.add_edge(current_node, predecessors.at(current_node), distances.at(current_node));
+        }
+
+        // iterate through all unvisited neighbors that are terminals
+        for (const Neighbor &neighbor : get_node(current_node).adjacent_nodes())
+        {
+            const NodeId neighbor_id = neighbor.id();
+
+            if (visited.at(neighbor_id))
+            {
+                continue;
+            }
+
+            // check if the corresponding edge would lower the distance to the current node
+            const int distance_to_neighbor = distances.at(neighbor_id);
+            const int edge_weight_to_neighbor = neighbor.edge_weight();
+
+            if (distance_to_neighbor == infinite_distance ||
+                edge_weight_to_neighbor < distance_to_neighbor)
+            {
+                // if yes, update the neighbor's distance
+                distances.at(neighbor_id) = edge_weight_to_neighbor;
+                predecessors.at(neighbor_id) = current_node;
+
+                prim_queue.push(std::make_pair(neighbor_id, edge_weight_to_neighbor));
+            }
+        }
+    }
+
+    return result_graph;
+}
+
 // computes the metric closure of a graph
 // stores the resulting distances in distance_matrix
 // such that distance_matrix.at(i).at(j) is the distance of nodes i and j
@@ -152,11 +235,8 @@ SteinerGraph::NodeId SteinerGraph::find_terminal_node() const
     return *_terminals.begin();
 }
 
-// computes a MST on the terminal subgraph in the metric closure using Prim's algorithm
-// and stores the predecessors of a corresponding rooted arborescence in predecessors
-void SteinerGraph::terminal_rooted_mst(
-    const std::vector<std::vector<int>> &metric_closure_distance_matrix,
-    std::vector<NodeId> &predecessors)
+void SteinerGraph::check_connected_metric_closure(
+    const std::vector<std::vector<int>> &metric_closure_distance_matrix)
     const
 {
     // check whether graph is connected (i.e. no distance is infinite)
@@ -170,6 +250,16 @@ void SteinerGraph::terminal_rooted_mst(
             }
         }
     }
+}
+
+// computes a MST on the terminal subgraph in the metric closure using Prim's algorithm
+// and stores the predecessors of a corresponding rooted arborescence in predecessors
+void SteinerGraph::terminal_rooted_mst(
+    const std::vector<std::vector<int>> &metric_closure_distance_matrix,
+    std::vector<NodeId> &predecessors)
+    const
+{
+    check_connected_metric_closure(metric_closure_distance_matrix);
 
     // pick a start node for Prim
     const NodeId start_node = find_terminal_node();
@@ -185,8 +275,6 @@ void SteinerGraph::terminal_rooted_mst(
 
     predecessors = std::vector<NodeId>(num_nodes(), invalid_node);
 
-    // stores whether a node has been added to the Prim queue
-    std::vector<bool> queued(num_nodes(), false);
     // stores whether a node has been removed from the Prim queue
     std::vector<bool> visited(num_nodes(), false);
 
@@ -195,7 +283,6 @@ void SteinerGraph::terminal_rooted_mst(
         prim_queue(compare_function);
 
     prim_queue.push(std::make_pair(start_node, distances.at(start_node)));
-    queued.at(start_node) = true;
 
     // pick the node with the smallest edge leaving the current result subgraph
     while (!prim_queue.empty())
@@ -289,21 +376,18 @@ void SteinerGraph::add_path_to_steiner_tree_mst_approximation(
 // computing a MST on the terminal subgraph in the metric closure
 SteinerGraph SteinerGraph::steiner_tree_mst_approximation() const
 {
-    SteinerGraph result_graph(num_nodes());
+    SteinerGraph result_graph = clear_edges();
 
     if (_terminals.size() == 0)
     {
         return result_graph;
     }
 
-    for (NodeId terminal : _terminals)
-    {
-        result_graph.make_terminal(terminal);
-    }
-
     // compute the metric closure and MST on it
     std::vector<std::vector<int>> metric_closure_distance_matrix(num_nodes(), std::vector<int>(num_nodes()));
+
     std::vector<std::vector<NodeId>> metric_closure_predecessor_matrix(num_nodes(), std::vector<NodeId>(num_nodes()));
+
     std::vector<std::vector<int>> metric_closure_predecessor_weight_matrix(num_nodes(), std::vector<int>(num_nodes(), infinite_weight));
 
     metric_closure(metric_closure_distance_matrix, metric_closure_predecessor_matrix, metric_closure_predecessor_weight_matrix);
@@ -328,5 +412,6 @@ SteinerGraph SteinerGraph::steiner_tree_mst_approximation() const
             result_graph);
     }
 
-    return result_graph;
+    // return a MST in the result graph
+    return result_graph.component_mst(find_terminal_node());
 }

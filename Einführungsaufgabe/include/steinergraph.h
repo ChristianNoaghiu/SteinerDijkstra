@@ -38,6 +38,8 @@ public:
   SteinerGraph(NodeId num_nodes);
   SteinerGraph(char const *filename);
 
+  SteinerGraph clear_edges() const;
+
   void add_nodes(NodeId num_new_nodes);
   void add_edge(NodeId tail, NodeId head, int weight = 1);
   void make_terminal(NodeId new_terminal);
@@ -59,6 +61,8 @@ public:
 
   SteinerGraph steiner_tree_mst_approximation() const;
 
+  SteinerGraph component_mst(const NodeId start_node) const;
+
   NodeId num_nodes() const;
   const Node &get_node(NodeId) const;
   void print() const;
@@ -68,6 +72,10 @@ public:
   static const int infinite_distance;
 
 private:
+  void check_connected_metric_closure(
+      const std::vector<std::vector<int>> &metric_closure_distance_matrix)
+      const;
+
   void terminal_rooted_mst(
       const std::vector<std::vector<int>> &metric_closure_distance_matrix,
       std::vector<NodeId> &predecessors)
