@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <vector>
+#include <set>
 
 class SteinerGraph
 {
@@ -39,7 +40,7 @@ public:
 
   void add_nodes(NodeId num_new_nodes);
   void add_edge(NodeId tail, NodeId head, int weight = 1);
-  void add_terminal(NodeId new_terminal);
+  void make_terminal(NodeId new_terminal);
 
   void dijkstra(
       const NodeId start_node,
@@ -82,4 +83,5 @@ private:
       const;
 
   std::vector<Node> _nodes;
+  std::set<NodeId> _terminals;
 };

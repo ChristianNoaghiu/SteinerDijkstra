@@ -181,13 +181,14 @@ void SteinerGraph::add_nodes(NodeId num_new_nodes)
    _nodes.resize(num_nodes() + num_new_nodes);
 }
 
-void SteinerGraph::add_terminal(NodeId new_terminal)
+void SteinerGraph::make_terminal(NodeId new_terminal)
 {
    if (new_terminal >= num_nodes() or new_terminal < 0)
    {
       throw std::runtime_error("Terminalstatus of Node cannot be changed due to undefined node");
    }
    _nodes[new_terminal].set_terminal();
+   _terminals.insert(new_terminal);
 }
 
 void SteinerGraph::Node::set_terminal()
@@ -265,12 +266,13 @@ void SteinerGraph::print() const
 
    std::cout << "with " << num_nodes() << " vertices, numbered 0,...,"
              << num_nodes() - 1 << " and " << terminalcounter << " terminals." << std::endl;
-   std::cout << "The terminals are the following nodes:" << std::endl;
+   std::cout << "The terminals are the following nodes: ";
    for (unsigned int i = 0; i < terminalliste.size(); i++)
    {
       std::cout << terminalliste.at(i) << ", ";
    }
-   std::cout << std::endl;
+   std::cout << std::endl
+             << std::endl;
 
    for (auto nodeid = 0; nodeid < num_nodes(); ++nodeid)
    {
@@ -430,7 +432,7 @@ SteinerGraph::SteinerGraph(char const *filename) // Konstruktor der Klasse   -  
                int b = terminals_section(line, node, num_terminals, terminal_counter);
                if (b == 1)
                {
-                  add_terminal(node - 1); // I don't think this can be outsourced, hence it's here
+                  make_terminal(node - 1); // I don't think this can be outsourced, hence it's here
                }
                else if (b == -1) // we ignore b == 0, since nothing is done with that information before the stp_end_line, where we check if it matches the counter
                {

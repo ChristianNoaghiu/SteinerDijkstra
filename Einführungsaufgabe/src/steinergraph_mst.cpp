@@ -144,15 +144,12 @@ void SteinerGraph::metric_closure(
 // returns a terminal node
 SteinerGraph::NodeId SteinerGraph::find_terminal_node() const
 {
-    for (int node_id = 0; node_id < num_nodes(); node_id++)
+    if (_terminals.size() == 0)
     {
-        if (get_node(node_id).is_terminal())
-        {
-            return node_id;
-        }
+        return invalid_node;
     }
 
-    return invalid_node;
+    return *_terminals.begin();
 }
 
 // computes a MST on the terminal subgraph in the metric closure using Prim's algorithm
@@ -287,6 +284,18 @@ void SteinerGraph::add_path_to_steiner_tree_mst_approximation(
 // computing a MST on the terminal subgraph in the metric closure
 SteinerGraph SteinerGraph::steiner_tree_mst_approximation() const
 {
+    SteinerGraph result_graph(num_nodes());
+
+    if (_terminals.size() == 0)
+    {
+        return result_graph;
+    }
+
+    for (NodeId terminal : _terminals)
+    {
+        result_graph.make_terminal(terminal);
+    }
+
     // compute the metric closure and MST on it
     std::vector<std::vector<int>> metric_closure_distance_matrix(num_nodes(), std::vector<int>(num_nodes()));
     std::vector<std::vector<NodeId>> metric_closure_predecessor_matrix(num_nodes(), std::vector<NodeId>(num_nodes()));
@@ -297,7 +306,6 @@ SteinerGraph SteinerGraph::steiner_tree_mst_approximation() const
     std::vector<NodeId> mst_predecessors(num_nodes(), invalid_node);
     terminal_rooted_mst(metric_closure_distance_matrix, mst_predecessors);
 
-    SteinerGraph result_graph(num_nodes());
     std::vector<bool> visited(num_nodes(), false);
 
     // for every node, decode the MST-metric-closure-path into the shortest path of the graph
