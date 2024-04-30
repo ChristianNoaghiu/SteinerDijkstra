@@ -381,9 +381,9 @@ SteinerGraph::SteinerGraph(char const *filename) // Konstruktor der Klasse   -  
                {
                   throw std::runtime_error("Invalid STP file: The specified number of edges does not match the edgecount.");
                }
-               if (num_nodes == -1)
+               if (num_nodes <= 0)
                {
-                  throw std::runtime_error("Invalid STP file: The number of nodes have not been specified.");
+                  throw std::runtime_error("Invalid STP file: The number of nodes have not been specified/are negative/are zero.");
                }
                last_section = GraphSection;
                current_section = NoSection;
