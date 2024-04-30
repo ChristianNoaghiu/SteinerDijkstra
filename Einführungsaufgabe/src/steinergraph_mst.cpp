@@ -174,6 +174,11 @@ void SteinerGraph::terminal_rooted_mst(
     // pick a start node for Prim
     const NodeId start_node = find_terminal_node();
 
+    if (start_node == invalid_node)
+    {
+        throw std::runtime_error("No terminal node exists.");
+    }
+
     // initialise the distances and predecessors
     std::vector<int> distances(num_nodes(), infinite_distance);
     distances.at(start_node) = 0;
