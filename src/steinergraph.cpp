@@ -174,7 +174,7 @@ namespace
 
 const SteinerGraph::NodeId SteinerGraph::invalid_node = -1;
 const int SteinerGraph::infinite_weight = std::numeric_limits<int>::max();
-const int SteinerGraph::infinite_distance = -1;
+const int SteinerGraph::infinite_distance = std::numeric_limits<int>::max();
 
 void SteinerGraph::add_nodes(NodeId num_new_nodes)
 {

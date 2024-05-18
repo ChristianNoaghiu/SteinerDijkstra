@@ -15,21 +15,13 @@ namespace
         const NodeDistancePair)>
     node_distance_pair_compare()
     {
-        return [](
-                   const NodeDistancePair &node_distance1,
-                   const NodeDistancePair &node_distance2)
+        return [](const NodeDistancePair &node_distance1,
+                  const NodeDistancePair &node_distance2)
         {
             const int distance1 = node_distance1.second;
             const int distance2 = node_distance2.second;
 
-            const bool is_node1_infinite = (distance1 == SteinerGraph::infinite_distance);
-            const bool is_node2_infinite = (distance2 == SteinerGraph::infinite_distance);
-
-            const bool are_both_nodes_finite = (!is_node1_infinite && !is_node2_infinite);
-            const bool is_node1_bigger_node2 = (distance1 > distance2);
-
-            return (is_node1_infinite && !is_node2_infinite) ||
-                   (are_both_nodes_finite && is_node1_bigger_node2);
+            return (distance1 > distance2);
         };
     }
 }
@@ -88,8 +80,7 @@ SteinerGraph::DijkstraStruct SteinerGraph::dijkstra(
             const int distance_to_neighbor = result.distances.at(neighbor.id());
 
             // check if this results in a smaller distance from start_node
-            if (distance_to_neighbor == infinite_distance ||
-                distance_to_current_node + neighbor.edge_weight() < distance_to_neighbor)
+            if (distance_to_current_node + neighbor.edge_weight() < distance_to_neighbor)
             {
                 // if yes, update the distance to the current neighbor
                 int updated_distance = distance_to_current_node + neighbor.edge_weight();
@@ -176,8 +167,7 @@ SteinerGraph SteinerGraph::component_mst(
             const int distance_to_neighbor = distances.at(neighbor_id);
             const int edge_weight_to_neighbor = neighbor.edge_weight();
 
-            if (distance_to_neighbor == infinite_distance ||
-                edge_weight_to_neighbor < distance_to_neighbor)
+            if (edge_weight_to_neighbor < distance_to_neighbor)
             {
                 // if yes, update the neighbor's distance
                 distances.at(neighbor_id) = edge_weight_to_neighbor;
@@ -313,8 +303,7 @@ std::vector<SteinerGraph::NodeId> SteinerGraph::terminal_rooted_mst_predecessors
             const int distance_to_neighbor = distances.at(neighbor_id);
             const int edge_weight_to_neighbor = metric_closure_distance_matrix.at(current_node).at(neighbor_id);
 
-            if (distance_to_neighbor == infinite_distance ||
-                edge_weight_to_neighbor < distance_to_neighbor)
+            if (edge_weight_to_neighbor < distance_to_neighbor)
             {
                 // if yes, update the neighbor's distance
                 distances.at(neighbor_id) = edge_weight_to_neighbor;
