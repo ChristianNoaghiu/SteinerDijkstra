@@ -44,7 +44,7 @@ SteinerGraph::DijkstraStruct SteinerGraph::dijkstra(
     result.predecessors = std::vector<std::optional<NodeId>>(num_nodes(), std::nullopt);
     result.predecessor_weights = std::vector<int>(num_nodes(), infinite_weight);
 
-    auto compare_function = node_distance_pair_compare();
+    const auto compare_function = node_distance_pair_compare();
     std::priority_queue<NodeDistancePair, std::vector<NodeDistancePair>, decltype(compare_function)>
         dijkstra_queue(compare_function);
 
@@ -130,7 +130,7 @@ SteinerGraph SteinerGraph::component_mst(
     // stores whether a node has been removed from the Prim queue
     std::vector<bool> visited(num_nodes(), false);
 
-    auto compare_function = node_distance_pair_compare();
+    const auto compare_function = node_distance_pair_compare();
     std::priority_queue<NodeDistancePair, std::vector<NodeDistancePair>, decltype(compare_function)>
         prim_queue(compare_function);
 
@@ -213,7 +213,7 @@ SteinerGraph::MetricClosureStruct SteinerGraph::metric_closure()
     // perform Dijkstra from every node
     for (NodeId i = 0; i < num_nodes(); i++)
     {
-        DijkstraStruct dijkstra_result = dijkstra(i);
+        const DijkstraStruct dijkstra_result = dijkstra(i);
 
         // add the results to the result matrices
         result.distance_matrix.push_back(dijkstra_result.distances);                     // distances from node i
@@ -276,7 +276,7 @@ std::vector<std::optional<SteinerGraph::NodeId>> SteinerGraph::terminal_rooted_m
         throw std::runtime_error("No terminal node exists.");
     }
 
-    NodeId start_node = start_node_optional.value();
+    const NodeId start_node = start_node_optional.value();
 
     // initialise the distances and predecessors
     std::vector<int> distances(num_nodes(), infinite_distance);
@@ -287,7 +287,7 @@ std::vector<std::optional<SteinerGraph::NodeId>> SteinerGraph::terminal_rooted_m
     // stores whether a node has been removed from the Prim queue
     std::vector<bool> visited(num_nodes(), false);
 
-    auto compare_function = node_distance_pair_compare();
+    const auto compare_function = node_distance_pair_compare();
     std::priority_queue<NodeDistancePair, std::vector<NodeDistancePair>, decltype(compare_function)>
         prim_queue(compare_function);
 
@@ -354,7 +354,7 @@ void SteinerGraph::add_path_to_steiner_tree_mst_approximation(
     SteinerGraph &result_graph)
     const
 {
-    std::optional<NodeId> mst_predecessor_optional = mst_predecessors.at(start_node);
+    const std::optional<NodeId> mst_predecessor_optional = mst_predecessors.at(start_node);
 
     if (!mst_predecessor_optional.has_value())
     {
@@ -363,7 +363,7 @@ void SteinerGraph::add_path_to_steiner_tree_mst_approximation(
 
     // start at start_node and go towards its mst predecessor
     // according to the shortest path
-    NodeId mst_predecessor = mst_predecessor_optional.value();
+    const NodeId mst_predecessor = mst_predecessor_optional.value();
     NodeId node_on_path = start_node;
 
     while (node_on_path != mst_predecessor)
@@ -378,14 +378,14 @@ void SteinerGraph::add_path_to_steiner_tree_mst_approximation(
         visited.at(node_on_path) = true;
 
         // add edge to next node on path with its weight to result graph
-        std::optional<NodeId> next_node_on_path_optional = metric_closure_predecessor_matrix.at(mst_predecessor).at(node_on_path);
+        const std::optional<NodeId> next_node_on_path_optional = metric_closure_predecessor_matrix.at(mst_predecessor).at(node_on_path);
         if (!next_node_on_path_optional.has_value())
         {
             throw std::runtime_error("Node has no predecessor in metric closure predecessor!");
         }
 
-        NodeId next_node_on_path = next_node_on_path_optional.value();
-        int edge_weight = metric_closure_predecessor_weight_matrix.at(node_on_path).at(next_node_on_path);
+        const NodeId next_node_on_path = next_node_on_path_optional.value();
+        const int edge_weight = metric_closure_predecessor_weight_matrix.at(node_on_path).at(next_node_on_path);
         result_graph.add_edge(node_on_path, next_node_on_path, edge_weight);
 
         node_on_path = next_node_on_path;
@@ -405,9 +405,9 @@ SteinerGraph SteinerGraph::steiner_tree_mst_approximation() const
     }
 
     // compute the metric closure and MST on it
-    MetricClosureStruct metric_closure_result = metric_closure();
+    const MetricClosureStruct metric_closure_result = metric_closure();
 
-    std::vector<std::optional<NodeId>> mst_predecessors = terminal_rooted_mst_predecessors(metric_closure_result.distance_matrix);
+    const std::vector<std::optional<NodeId>> mst_predecessors = terminal_rooted_mst_predecessors(metric_closure_result.distance_matrix);
 
     std::vector<bool> visited(num_nodes(), false);
 
@@ -428,6 +428,6 @@ SteinerGraph SteinerGraph::steiner_tree_mst_approximation() const
 
     // return a MST in the result graph
     // terminal_node must have a value since _terminals.size() == 0 has been excluded above
-    NodeId terminal_node = find_terminal_node().value();
+    const NodeId terminal_node = find_terminal_node().value();
     return result_graph.component_mst(terminal_node);
 }
