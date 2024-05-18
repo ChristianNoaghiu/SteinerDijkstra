@@ -26,8 +26,10 @@ namespace
     }
 }
 
-// computes distances to every node and stores these as well as
-// the predecessors and their edge weights on the respective path in distances/predecessors
+/**
+ * computes distances to every node and stores these as well as
+ * the predecessors and their edge weights on the respective path in distances/predecessors
+ */
 SteinerGraph::DijkstraStruct SteinerGraph::dijkstra(
     const NodeId start_node)
     const
@@ -99,8 +101,10 @@ SteinerGraph::DijkstraStruct SteinerGraph::dijkstra(
     return result;
 }
 
-// computes a MST in the connected component of start_node
-// using Prim's algorithm
+/**
+ * computes a MST in the connected component of start_node
+ * using Prim's algorithm
+ */
 SteinerGraph SteinerGraph::component_mst(
     const NodeId start_node)
     const
@@ -188,13 +192,15 @@ SteinerGraph SteinerGraph::component_mst(
     return result_graph;
 }
 
-// computes the metric closure of a graph
-// stores the resulting distances in distance_matrix
-// such that distance_matrix.at(i).at(j) is the distance of nodes i and j
-// stores the predecessors on the corresponding paths in predecessor_matrix
-// such that predecessor_matrix.at(i).at(j) is the predecessor
-// of j on the path from i to j
-// stores the corresponding edge weights in the path as well
+/**
+ * computes the metric closure of a graph
+ * stores the resulting distances in distance_matrix
+ * such that distance_matrix.at(i).at(j) is the distance of nodes i and j
+ * stores the predecessors on the corresponding paths in predecessor_matrix
+ * such that predecessor_matrix.at(i).at(j) is the predecessor
+ * of j on the path from i to j
+ * stores the corresponding edge weights in the path as well
+ */
 SteinerGraph::MetricClosureStruct SteinerGraph::metric_closure()
     const
 {
@@ -218,7 +224,9 @@ SteinerGraph::MetricClosureStruct SteinerGraph::metric_closure()
     return result;
 }
 
-// returns a terminal node
+/**
+ * returns a terminal node
+ */
 std::optional<SteinerGraph::NodeId> SteinerGraph::find_terminal_node() const
 {
     if (_terminals.size() == 0)
@@ -229,11 +237,14 @@ std::optional<SteinerGraph::NodeId> SteinerGraph::find_terminal_node() const
     return *_terminals.begin();
 }
 
+/**
+ * check whether graph is connected (i.e. no distance is infinite)
+ * @param metric_closure_distance_matrix metric closure distance matrix from metric_closure()
+ */
 void SteinerGraph::check_connected_metric_closure(
     const std::vector<std::vector<int>> &metric_closure_distance_matrix)
     const
 {
-    // check whether graph is connected (i.e. no distance is infinite)
     for (NodeId node1 = 0; node1 < num_nodes(); node1++)
     {
         for (NodeId node2 = 0; node2 < num_nodes(); node2++)
@@ -246,8 +257,11 @@ void SteinerGraph::check_connected_metric_closure(
     }
 }
 
-// computes a MST on the terminal subgraph in the metric closure using Prim's algorithm
-// and stores the predecessors of a corresponding rooted arborescence in predecessors
+/**
+ * computes a MST on the terminal subgraph in the metric closure using Prim's algorithm
+ * and stores the predecessors of a corresponding rooted arborescence in predecessors
+ * @param metric_closure_distance_matrix metric closure distance matrix from metric_closure()
+ */
 std::vector<std::optional<SteinerGraph::NodeId>> SteinerGraph::terminal_rooted_mst_predecessors(
     const std::vector<std::vector<int>> &metric_closure_distance_matrix)
     const
@@ -326,9 +340,11 @@ std::vector<std::optional<SteinerGraph::NodeId>> SteinerGraph::terminal_rooted_m
     return predecessors;
 }
 
-// decodes the MST-metric-closure-path from a start_node into the real
-// path of the graph and adds all edges on the way to the result_graph
-// of the steiner_tree_mst_approximation
+/**
+ * decodes the MST-metric-closure-path from a start_node into the real
+ * path of the graph and adds all edges on the way to the result_graph
+ * of the steiner_tree_mst_approximation
+ */
 void SteinerGraph::add_path_to_steiner_tree_mst_approximation(
     const SteinerGraph::NodeId &start_node,
     const std::vector<std::vector<std::optional<SteinerGraph::NodeId>>> &metric_closure_predecessor_matrix,
@@ -376,8 +392,9 @@ void SteinerGraph::add_path_to_steiner_tree_mst_approximation(
     }
 }
 
-// computes a 2-approximation of a Steiner tree by
-// computing a MST on the terminal subgraph in the metric closure
+/** computes a 2-approximation of a Steiner tree by
+ * computing a MST on the terminal subgraph in the metric closure
+ */
 SteinerGraph SteinerGraph::steiner_tree_mst_approximation() const
 {
     SteinerGraph result_graph = clear_edges();
