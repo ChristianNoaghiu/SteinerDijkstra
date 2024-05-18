@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <vector>
+#include <set>
 
 class SteinerGraph
 {
@@ -11,27 +12,33 @@ public:
   class Neighbor
   {
   public:
-    Neighbor(SteinerGraph::NodeId n, double w);
-    double edge_weight() const;
+    Neighbor(SteinerGraph::NodeId n, int w);
+    int edge_weight() const;
     SteinerGraph::NodeId id() const;
 
   private:
     SteinerGraph::NodeId _id;
-    double _edge_weight;
+    int _edge_weight;
   };
 
   class Node
   {
   public:
-    void add_neighbor(SteinerGraph::NodeId nodeid, double weight);
+    void add_neighbor(SteinerGraph::NodeId nodeid, int weight);
     const std::vector<Neighbor> &adjacent_nodes() const;
+
+    void set_terminal();
+    bool is_terminal() const;
 
   private:
     std::vector<Neighbor> _neighbors;
+    bool _terminal = false;
   };
 
   SteinerGraph(NodeId num_nodes);
   SteinerGraph(char const *filename);
+
+  SteinerGraph clear_edges() const;
 
   void add_nodes(NodeId num_new_nodes);
   void add_edge(NodeId tail, NodeId head, int weight = 1);
@@ -64,7 +71,8 @@ public:
   void print() const;
 
   static const NodeId invalid_node;
-  static const double infinite_weight;
+  static const int infinite_weight;
+  static const int infinite_distance;
 
 private:
   void check_connected_metric_closure(
@@ -85,4 +93,5 @@ private:
       const;
 
   std::vector<Node> _nodes;
+  std::set<NodeId> _terminals;
 };
