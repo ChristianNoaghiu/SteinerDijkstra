@@ -44,18 +44,21 @@ public:
   void add_edge(NodeId tail, NodeId head, int weight = 1);
   void make_terminal(NodeId new_terminal);
 
-  void dijkstra(
-      const NodeId start_node,
-      std::vector<int> &distances,
-      std::vector<NodeId> &predecessors,
-      std::vector<int> &predecessor_weights)
-      const;
+  struct DijkstraStruct
+  {
+    std::vector<int> distances;
+    std::vector<NodeId> predecessors;
+    std::vector<int> predecessor_weights;
+  };
+  DijkstraStruct dijkstra(const NodeId start_node) const;
 
-  void metric_closure(
-      std::vector<std::vector<int>> &distance_matrix,
-      std::vector<std::vector<NodeId>> &predecessor_matrix,
-      std::vector<std::vector<int>> &predecessor_distance_matrix)
-      const;
+  struct MetricClosureStruct
+  {
+    std::vector<std::vector<int>> distance_matrix;
+    std::vector<std::vector<NodeId>> predecessor_matrix;
+    std::vector<std::vector<int>> predecessor_weight_matrix;
+  };
+  MetricClosureStruct metric_closure() const;
 
   NodeId find_terminal_node() const;
 
@@ -76,9 +79,8 @@ private:
       const std::vector<std::vector<int>> &metric_closure_distance_matrix)
       const;
 
-  void terminal_rooted_mst(
-      const std::vector<std::vector<int>> &metric_closure_distance_matrix,
-      std::vector<NodeId> &predecessors)
+  std::vector<NodeId> terminal_rooted_mst_predecessors(
+      const std::vector<std::vector<int>> &metric_closure_distance_matrix)
       const;
 
   void add_path_to_steiner_tree_mst_approximation(

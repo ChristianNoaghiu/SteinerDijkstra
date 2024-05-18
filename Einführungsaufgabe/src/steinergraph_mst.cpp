@@ -36,20 +36,19 @@ namespace
 
 // computes distances to every node and stores these as well as
 // the predecessors and their edge weights on the respective path in distances/predecessors
-void SteinerGraph::dijkstra(
-    const NodeId start_node,
-    std::vector<int> &distances,
-    std::vector<NodeId> &predecessors,
-    std::vector<int> &predecessor_weights)
+SteinerGraph::DijkstraStruct SteinerGraph::dijkstra(
+    const NodeId start_node)
     const
 {
     // initialise distances
-    distances = std::vector<int>(num_nodes(), infinite_distance);
-    distances.at(start_node) = 0;
+    DijkstraStruct result;
+
+    result.distances = std::vector<int>(num_nodes(), infinite_distance);
+    result.distances.at(start_node) = 0;
 
     // initialise predecessors
-    predecessors = std::vector<int>(num_nodes(), invalid_node);
-    predecessor_weights = std::vector<int>(num_nodes(), infinite_weight);
+    result.predecessors = std::vector<NodeId>(num_nodes(), invalid_node);
+    result.predecessor_weights = std::vector<int>(num_nodes(), infinite_weight);
 
     auto compare_function = node_distance_pair_compare();
     std::priority_queue<NodeDistancePair, std::vector<NodeDistancePair>, decltype(compare_function)>
@@ -58,7 +57,7 @@ void SteinerGraph::dijkstra(
     // stores whether a node has been removed from the Dijkstra queue
     std::vector<bool> visited(num_nodes(), false);
 
-    dijkstra_queue.push(std::make_pair(start_node, distances.at(start_node)));
+    dijkstra_queue.push(std::make_pair(start_node, result.distances.at(start_node)));
 
     while (!dijkstra_queue.empty())
     {
@@ -76,7 +75,7 @@ void SteinerGraph::dijkstra(
         }
         visited.at(current_node) = true;
 
-        const int distance_to_current_node = distances.at(current_node);
+        const int distance_to_current_node = result.distances.at(current_node);
 
         // iterate through his unvisited neighbors
         for (auto neighbor : get_node(current_node).adjacent_nodes())
@@ -86,7 +85,7 @@ void SteinerGraph::dijkstra(
                 continue;
             }
 
-            const int distance_to_neighbor = distances.at(neighbor.id());
+            const int distance_to_neighbor = result.distances.at(neighbor.id());
 
             // check if this results in a smaller distance from start_node
             if (distance_to_neighbor == infinite_distance ||
@@ -94,9 +93,9 @@ void SteinerGraph::dijkstra(
             {
                 // if yes, update the distance to the current neighbor
                 int updated_distance = distance_to_current_node + neighbor.edge_weight();
-                distances.at(neighbor.id()) = updated_distance;
-                predecessors.at(neighbor.id()) = current_node;
-                predecessor_weights.at(neighbor.id()) = neighbor.edge_weight();
+                result.distances.at(neighbor.id()) = updated_distance;
+                result.predecessors.at(neighbor.id()) = current_node;
+                result.predecessor_weights.at(neighbor.id()) = neighbor.edge_weight();
 
                 // queue the neighbor
                 // possibly it is already queued with a larger key,
@@ -105,6 +104,8 @@ void SteinerGraph::dijkstra(
             }
         }
     }
+
+    return result;
 }
 
 // computes a MST in the connected component of start_node
@@ -197,31 +198,27 @@ SteinerGraph SteinerGraph::component_mst(
 // such that predecessor_matrix.at(i).at(j) is the predecessor
 // of j on the path from i to j
 // stores the corresponding edge weights in the path as well
-void SteinerGraph::metric_closure(
-    std::vector<std::vector<int>> &distance_matrix,
-    std::vector<std::vector<NodeId>> &predecessor_matrix,
-    std::vector<std::vector<int>> &predecessor_distance_matrix)
+SteinerGraph::MetricClosureStruct SteinerGraph::metric_closure()
     const
 {
     // initialise the result matrices
-    distance_matrix = std::vector<std::vector<int>>();
-    predecessor_matrix = std::vector<std::vector<NodeId>>();
-    predecessor_distance_matrix = std::vector<std::vector<int>>();
+    MetricClosureStruct result;
+    result.distance_matrix = std::vector<std::vector<int>>();
+    result.predecessor_matrix = std::vector<std::vector<NodeId>>();
+    result.predecessor_weight_matrix = std::vector<std::vector<int>>();
 
     // perform Dijkstra from every node
-    for (int i = 0; i < num_nodes(); i++)
+    for (NodeId i = 0; i < num_nodes(); i++)
     {
-        std::vector<int> distances_from_i;
-        std::vector<NodeId> predecessors_to_i;
-        std::vector<int> predecessor_weights_to_i;
-
-        dijkstra(i, distances_from_i, predecessors_to_i, predecessor_weights_to_i);
+        DijkstraStruct dijkstra_result = dijkstra(i);
 
         // add the results to the result matrices
-        distance_matrix.push_back(distances_from_i);
-        predecessor_matrix.push_back(predecessors_to_i);
-        predecessor_distance_matrix.push_back(predecessor_weights_to_i);
+        result.distance_matrix.push_back(dijkstra_result.distances);                     // distances from node i
+        result.predecessor_matrix.push_back(dijkstra_result.predecessors);               // predecessors on the path from i
+        result.predecessor_weight_matrix.push_back(dijkstra_result.predecessor_weights); // weights of the corresponding edges
     }
+
+    return result;
 }
 
 // returns a terminal node
@@ -254,9 +251,8 @@ void SteinerGraph::check_connected_metric_closure(
 
 // computes a MST on the terminal subgraph in the metric closure using Prim's algorithm
 // and stores the predecessors of a corresponding rooted arborescence in predecessors
-void SteinerGraph::terminal_rooted_mst(
-    const std::vector<std::vector<int>> &metric_closure_distance_matrix,
-    std::vector<NodeId> &predecessors)
+std::vector<SteinerGraph::NodeId> SteinerGraph::terminal_rooted_mst_predecessors(
+    const std::vector<std::vector<int>> &metric_closure_distance_matrix)
     const
 {
     check_connected_metric_closure(metric_closure_distance_matrix);
@@ -273,7 +269,7 @@ void SteinerGraph::terminal_rooted_mst(
     std::vector<int> distances(num_nodes(), infinite_distance);
     distances.at(start_node) = 0;
 
-    predecessors = std::vector<NodeId>(num_nodes(), invalid_node);
+    std::vector<NodeId> predecessors(num_nodes(), invalid_node);
 
     // stores whether a node has been removed from the Prim queue
     std::vector<bool> visited(num_nodes(), false);
@@ -328,6 +324,8 @@ void SteinerGraph::terminal_rooted_mst(
             }
         }
     }
+
+    return predecessors;
 }
 
 // decodes the MST-metric-closure-path from a start_node into the real
@@ -384,16 +382,9 @@ SteinerGraph SteinerGraph::steiner_tree_mst_approximation() const
     }
 
     // compute the metric closure and MST on it
-    std::vector<std::vector<int>> metric_closure_distance_matrix(num_nodes(), std::vector<int>(num_nodes()));
+    MetricClosureStruct metric_closure_result = metric_closure();
 
-    std::vector<std::vector<NodeId>> metric_closure_predecessor_matrix(num_nodes(), std::vector<NodeId>(num_nodes()));
-
-    std::vector<std::vector<int>> metric_closure_predecessor_weight_matrix(num_nodes(), std::vector<int>(num_nodes(), infinite_weight));
-
-    metric_closure(metric_closure_distance_matrix, metric_closure_predecessor_matrix, metric_closure_predecessor_weight_matrix);
-
-    std::vector<NodeId> mst_predecessors(num_nodes(), invalid_node);
-    terminal_rooted_mst(metric_closure_distance_matrix, mst_predecessors);
+    std::vector<NodeId> mst_predecessors = terminal_rooted_mst_predecessors(metric_closure_result.distance_matrix);
 
     std::vector<bool> visited(num_nodes(), false);
 
@@ -405,8 +396,8 @@ SteinerGraph SteinerGraph::steiner_tree_mst_approximation() const
     {
         add_path_to_steiner_tree_mst_approximation(
             path_start_node,
-            metric_closure_predecessor_matrix,
-            metric_closure_predecessor_weight_matrix,
+            metric_closure_result.predecessor_matrix,
+            metric_closure_result.predecessor_weight_matrix,
             mst_predecessors,
             visited,
             result_graph);
