@@ -24,29 +24,6 @@ namespace
             return (distance1 > distance2);
         };
     }
-
-    std::function<bool(const SteinerGraph::NodeId)> is_in_graph()
-    {
-        return [](const SteinerGraph::NodeId node)
-        {
-            /**
-             * @todo Wunused complains about node not being used,
-             * therefore this redundant comparison
-             */
-            if (node + 1 == node + 1)
-                return true;
-            return true;
-        };
-    }
-
-    // lambda returning whether a node is contained in node_set
-    std::function<bool(const SteinerGraph::NodeId)> is_in_set(std::set<SteinerGraph::NodeId> node_set)
-    {
-        return [node_set = node_set](const SteinerGraph::NodeId node)
-        {
-            return node_set.count(node) != 0;
-        };
-    }
 }
 
 /**
@@ -122,6 +99,36 @@ SteinerGraph::DijkstraStruct SteinerGraph::dijkstra(
     }
 
     return result;
+}
+
+/**
+ * lambda returning true for all nodes
+ * (whole graph as subgraph)
+ */
+std::function<bool(const SteinerGraph::NodeId)> SteinerGraph::is_in_graph()
+{
+    return [](const SteinerGraph::NodeId node)
+    {
+        /**
+         * @todo Wunused complains about node not being used,
+         * therefore this redundant comparison
+         */
+        if (node + 1 == node + 1)
+            return true;
+        return true;
+    };
+}
+
+/**
+ * lambda returning whether a node is contained in node_set
+ * (for induced subgraph)
+ */
+std::function<bool(const SteinerGraph::NodeId)> SteinerGraph::is_in_set(std::set<SteinerGraph::NodeId> node_set)
+{
+    return [node_set = node_set](const SteinerGraph::NodeId node)
+    {
+        return node_set.count(node) != 0;
+    };
 }
 
 /**

@@ -105,4 +105,10 @@ private:
 
   std::vector<Node> _nodes;
   std::set<NodeId> _terminals;
+
+  // lambda returning
+  std::function<bool(const SteinerGraph::NodeId)> is_in_graph();
+
+  // lambda returning whether a node is contained in node_set
+  std::function<bool(const SteinerGraph::NodeId)> is_in_set(std::set<SteinerGraph::NodeId> node_set);
 };
