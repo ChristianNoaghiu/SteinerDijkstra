@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <vector>
+#include <functional>
 #include <set>
 
 class SteinerGraph
@@ -64,10 +65,18 @@ public:
 
   SteinerGraph steiner_tree_mst_approximation() const;
 
+  SteinerGraph subgraph_mst(
+      const std::function<bool(const NodeId node)> is_in_subgraph)
+      const;
+  SteinerGraph subgraph_mst(
+      const std::function<bool(const NodeId node)> is_in_subgraph,
+      const NodeId start_node)
+      const;
   SteinerGraph component_mst(const NodeId start_node) const;
 
   NodeId num_nodes() const;
   const Node &get_node(NodeId) const;
+  int edge_weight_sum() const;
   void print() const;
 
   static const int infinite_weight;

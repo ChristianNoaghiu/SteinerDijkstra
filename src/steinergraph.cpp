@@ -262,6 +262,24 @@ int SteinerGraph::Neighbor::edge_weight() const
    return _edge_weight;
 }
 
+int SteinerGraph::edge_weight_sum() const
+{
+   int result = 0;
+
+   for (auto nodeid = 0; nodeid < num_nodes(); ++nodeid)
+   {
+      for (auto neighbor : get_node(nodeid).adjacent_nodes())
+      {
+         if (neighbor.id() > nodeid) // ensures that edge are counted only once
+         {
+            result += neighbor.edge_weight();
+         }
+      }
+   }
+
+   return result;
+}
+
 void SteinerGraph::print() const
 {
    std::cout << "SteinerGraph ";
@@ -297,20 +315,7 @@ void SteinerGraph::print() const
       }
    }
 
-   int edge_weight_sum = 0;
-
-   for (auto nodeid = 0; nodeid < num_nodes(); ++nodeid)
-   {
-      for (auto neighbor : get_node(nodeid).adjacent_nodes())
-      {
-         if (neighbor.id() > nodeid) // ensures that edge are counted only once
-         {
-            edge_weight_sum += neighbor.edge_weight();
-         }
-      }
-   }
-
-   std::cout << "\nSum of edge weights: " << edge_weight_sum << "\n";
+   std::cout << "\nSum of edge weights: " << edge_weight_sum() << "\n";
 }
 
 SteinerGraph::SteinerGraph(char const *filename) // Konstruktor der Klasse   -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -

@@ -24,6 +24,20 @@ namespace
             return (distance1 > distance2);
         };
     }
+
+    std::function<bool(const SteinerGraph::NodeId)> is_in_graph()
+    {
+        return [](const SteinerGraph::NodeId node)
+        {
+            /**
+             * @todo Wunused complains about node not being used,
+             * therefore this redundant comparison
+             */
+            if (node + 1 == node + 1)
+                return true;
+            return true;
+        };
+    }
 }
 
 /**
@@ -102,10 +116,11 @@ SteinerGraph::DijkstraStruct SteinerGraph::dijkstra(
 }
 
 /**
- * computes a MST in the connected component of start_node
- * using Prim's algorithm
+ * computes a MST the subgraph induced by is_in_subgraph
+ * using Prim's algorithm (in the connected component of start_node)
  */
-SteinerGraph SteinerGraph::component_mst(
+SteinerGraph SteinerGraph::subgraph_mst(
+    const std::function<bool(const NodeId node)> is_in_subgraph,
     const NodeId start_node)
     const
 {
@@ -117,6 +132,11 @@ SteinerGraph SteinerGraph::component_mst(
     if (start_node >= num_nodes())
     {
         throw std::runtime_error("Invalid start_node");
+    }
+
+    if (!is_in_subgraph(start_node))
+    {
+        throw std::runtime_error("start_node is not in subgraph");
     }
 
     SteinerGraph result_graph = clear_edges();
@@ -142,6 +162,12 @@ SteinerGraph SteinerGraph::component_mst(
         const NodeDistancePair current_node_distance = prim_queue.top();
         const NodeId current_node = current_node_distance.first;
         prim_queue.pop();
+
+        // skip nodes that are not in the subgraph
+        if (!is_in_subgraph(current_node))
+        {
+            continue;
+        }
 
         if (visited.at(current_node))
         {
@@ -190,6 +216,44 @@ SteinerGraph SteinerGraph::component_mst(
     }
 
     return result_graph;
+}
+
+/**
+ * computes a MST in the subgraph induced by is_in_subgraph
+ * using Prim's algorithm (in the connected component of
+ * a random node)
+ */
+SteinerGraph SteinerGraph::subgraph_mst(
+    const std::function<bool(const NodeId node)> is_in_subgraph)
+    const
+{
+    NodeId start_node = 0;
+
+    /**
+     * iterate through all the nodes until a node in the subgraph
+     * is found
+     */
+    for (start_node = 0; start_node < num_nodes() && !is_in_subgraph(start_node); start_node++)
+    {
+    }
+
+    if (start_node >= num_nodes())
+    {
+        throw std::runtime_error("Subgraph has no vertices.");
+    }
+
+    return subgraph_mst(is_in_subgraph, start_node);
+}
+
+/**
+ * computes a MST in the connected component of start_node
+ * using Prim's algorithm
+ */
+SteinerGraph SteinerGraph::component_mst(
+    const NodeId start_node)
+    const
+{
+    return subgraph_mst(is_in_graph(), start_node);
 }
 
 /**
