@@ -233,7 +233,7 @@ SteinerGraph SteinerGraph::subgraph_mst(
      * iterate through all the nodes until a node in the subgraph
      * is found
      */
-    for (NodeId node = 0; node < num_nodes() && node++)
+    for (NodeId node = 0; node < num_nodes(); node++)
     {
         if (is_in_subgraph(node))
         {
