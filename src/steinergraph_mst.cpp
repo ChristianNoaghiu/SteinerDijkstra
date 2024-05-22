@@ -227,22 +227,27 @@ SteinerGraph SteinerGraph::subgraph_mst(
     const std::function<bool(const NodeId node)> is_in_subgraph)
     const
 {
-    NodeId start_node = 0;
+    std::optional<NodeId> start_node = {};
 
     /**
      * iterate through all the nodes until a node in the subgraph
      * is found
      */
-    for (start_node = 0; start_node < num_nodes() && !is_in_subgraph(start_node); start_node++)
+    for (NodeId node = 0; node < num_nodes() && node++)
     {
+        if (is_in_subgraph(node))
+        {
+            start_node = node;
+            break;
+        }
     }
 
-    if (start_node >= num_nodes())
+    if (!start_node.has_value())
     {
         throw std::runtime_error("Subgraph has no vertices.");
     }
 
-    return subgraph_mst(is_in_subgraph, start_node);
+    return subgraph_mst(is_in_subgraph, start_node.value());
 }
 
 /**
