@@ -13,7 +13,7 @@ public:
   class Neighbor
   {
   public:
-    Neighbor(SteinerGraph::NodeId n, int w);
+    Neighbor(const SteinerGraph::NodeId n, const int w);
     int edge_weight() const;
     SteinerGraph::NodeId id() const;
 
@@ -25,25 +25,29 @@ public:
   class Node
   {
   public:
-    void add_neighbor(SteinerGraph::NodeId nodeid, int weight);
+    void add_neighbor(const SteinerGraph::NodeId nodeid, const int weight);
     const std::vector<Neighbor> &adjacent_nodes() const;
 
     void set_terminal();
+    void set_predecessor(const std::optional<NodeId> predecessor);
+    const std::optional<NodeId> &get_predecessor() const;
     bool is_terminal() const;
 
   private:
     std::vector<Neighbor> _neighbors;
+    std::optional<NodeId> _predecessor = {}; // for MST information
     bool _terminal = false;
   };
 
-  SteinerGraph(NodeId num_nodes);
+  SteinerGraph(const NodeId num_nodes);
   SteinerGraph(char const *filename);
 
   SteinerGraph clear_edges() const;
 
-  void add_nodes(NodeId num_new_nodes);
-  void add_edge(NodeId tail, NodeId head, int weight = 1);
-  void make_terminal(NodeId new_terminal);
+  void add_nodes(const NodeId num_new_nodes);
+  void add_edge(const NodeId tail, const NodeId head, const int weight = 1);
+  void make_terminal(const NodeId new_terminal);
+  void set_predecessor(const NodeId node_id, const std::optional<NodeId> predecessor);
 
   struct DijkstraStruct
   {
@@ -78,7 +82,7 @@ public:
   SteinerGraph component_mst(const NodeId start_node) const;
 
   NodeId num_nodes() const;
-  const Node &get_node(NodeId) const;
+  const Node &get_node(const NodeId node) const;
   int edge_weight_sum() const;
   void print() const;
 
@@ -90,15 +94,11 @@ private:
       const std::vector<std::vector<int>> &metric_closure_distance_matrix)
       const;
 
-  std::vector<std::optional<NodeId>> terminal_rooted_mst_predecessors(
-      const std::vector<std::vector<int>> &metric_closure_distance_matrix)
-      const;
-
   void add_path_to_steiner_tree_mst_approximation(
       const NodeId &start_node,
       const std::vector<std::vector<std::optional<NodeId>>> &metric_closure_predecessor_matrix,
       const std::vector<std::vector<int>> &metric_closure_predecessor_weight_matrix,
-      const std::vector<std::optional<NodeId>> &mst_predecessors,
+      const SteinerGraph &mst_graph,
       std::vector<bool> &visited,
       SteinerGraph &result_graph)
       const;

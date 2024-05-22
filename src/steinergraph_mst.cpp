@@ -38,6 +38,15 @@ namespace
             return true;
         };
     }
+
+    // lambda returning whether a node is contained in node_set
+    std::function<bool(const SteinerGraph::NodeId)> is_in_set(std::set<SteinerGraph::NodeId> node_set)
+    {
+        return [node_set = node_set](const SteinerGraph::NodeId node)
+        {
+            return node_set.count(node) != 0;
+        };
+    }
 }
 
 /**
@@ -118,6 +127,7 @@ SteinerGraph::DijkstraStruct SteinerGraph::dijkstra(
 /**
  * computes a MST the subgraph induced by is_in_subgraph
  * using Prim's algorithm (in the connected component of start_node)
+ * and saving the predecessor on the path towards start_node
  */
 SteinerGraph SteinerGraph::subgraph_mst(
     const std::function<bool(const NodeId node)> is_in_subgraph,
@@ -188,6 +198,7 @@ SteinerGraph SteinerGraph::subgraph_mst(
 
             NodeId predecessor = predecessor_optional.value();
             result_graph.add_edge(current_node, predecessor, distances.at(current_node));
+            result_graph.set_predecessor(current_node, predecessor_optional);
         }
 
         // iterate through all unvisited neighbors that are terminals
@@ -347,89 +358,6 @@ void SteinerGraph::check_connected_metric_closure(
 }
 
 /**
- * computes a MST on the terminal subgraph in the metric closure using Prim's algorithm
- * and stores the predecessors of a corresponding rooted arborescence in predecessors
- * @param metric_closure_distance_matrix metric closure distance matrix from metric_closure()
- */
-std::vector<std::optional<SteinerGraph::NodeId>> SteinerGraph::terminal_rooted_mst_predecessors(
-    const std::vector<std::vector<int>> &metric_closure_distance_matrix)
-    const
-{
-    check_connected_metric_closure(metric_closure_distance_matrix);
-
-    // pick a start node for Prim
-    const std::optional<NodeId> start_node_optional = find_terminal_node();
-
-    if (!start_node_optional.has_value())
-    {
-        throw std::runtime_error("No terminal node exists.");
-    }
-
-    const NodeId start_node = start_node_optional.value();
-
-    // initialise the distances and predecessors
-    std::vector<int> distances(num_nodes(), infinite_distance);
-    distances.at(start_node) = 0;
-
-    std::vector<std::optional<NodeId>> predecessors(num_nodes(), std::nullopt);
-
-    // stores whether a node has been removed from the Prim queue
-    std::vector<bool> visited(num_nodes(), false);
-
-    const auto compare_function = node_distance_pair_compare();
-    std::priority_queue<NodeDistancePair, std::vector<NodeDistancePair>, decltype(compare_function)>
-        prim_queue(compare_function);
-
-    prim_queue.push(std::make_pair(start_node, distances.at(start_node)));
-
-    // pick the node with the smallest edge leaving the current result subgraph
-    while (!prim_queue.empty())
-    {
-        const NodeDistancePair current_node_distance = prim_queue.top();
-        const NodeId current_node = current_node_distance.first;
-        prim_queue.pop();
-
-        if (visited.at(current_node))
-        {
-            // ensure that no vertex is visited twice
-            // (vertices can occur multiple times in the queue with
-            // different keys)
-            continue;
-        }
-        visited.at(current_node) = true;
-
-        // iterate through all unvisited neighbors that are terminals
-        for (NodeId neighbor_id = 0; neighbor_id < num_nodes(); neighbor_id++)
-        {
-            if (!get_node(neighbor_id).is_terminal())
-            {
-                continue;
-            }
-
-            if (visited.at(neighbor_id))
-            {
-                continue;
-            }
-
-            // check if the corresponding edge would lower the distance to the current node
-            const int distance_to_neighbor = distances.at(neighbor_id);
-            const int edge_weight_to_neighbor = metric_closure_distance_matrix.at(current_node).at(neighbor_id);
-
-            if (edge_weight_to_neighbor < distance_to_neighbor)
-            {
-                // if yes, update the neighbor's distance
-                distances.at(neighbor_id) = edge_weight_to_neighbor;
-                predecessors.at(neighbor_id) = current_node;
-
-                prim_queue.push(std::make_pair(neighbor_id, edge_weight_to_neighbor));
-            }
-        }
-    }
-
-    return predecessors;
-}
-
-/**
  * decodes the MST-metric-closure-path from a start_node into the real
  * path of the graph and adds all edges on the way to the result_graph
  * of the steiner_tree_mst_approximation
@@ -438,12 +366,12 @@ void SteinerGraph::add_path_to_steiner_tree_mst_approximation(
     const SteinerGraph::NodeId &start_node,
     const std::vector<std::vector<std::optional<SteinerGraph::NodeId>>> &metric_closure_predecessor_matrix,
     const std::vector<std::vector<int>> &metric_closure_predecessor_weight_matrix,
-    const std::vector<std::optional<SteinerGraph::NodeId>> &mst_predecessors,
+    const SteinerGraph &mst_graph,
     std::vector<bool> &visited,
     SteinerGraph &result_graph)
     const
 {
-    const std::optional<NodeId> mst_predecessor_optional = mst_predecessors.at(start_node);
+    const std::optional<NodeId> mst_predecessor_optional = mst_graph.get_node(start_node).get_predecessor();
 
     if (!mst_predecessor_optional.has_value())
     {
@@ -495,8 +423,10 @@ SteinerGraph SteinerGraph::steiner_tree_mst_approximation() const
 
     // compute the metric closure and MST on it
     const MetricClosureStruct metric_closure_result = metric_closure();
+    check_connected_metric_closure(metric_closure_result.distance_matrix);
 
-    const std::vector<std::optional<NodeId>> mst_predecessors = terminal_rooted_mst_predecessors(metric_closure_result.distance_matrix);
+    const SteinerGraph metric_closure_graph_result = metric_closure_graph(metric_closure_result.distance_matrix);
+    const SteinerGraph mst_graph = metric_closure_graph_result.subgraph_mst(is_in_set(_terminals));
 
     std::vector<bool> visited(num_nodes(), false);
 
@@ -510,7 +440,7 @@ SteinerGraph SteinerGraph::steiner_tree_mst_approximation() const
             path_start_node,
             metric_closure_result.predecessor_matrix,
             metric_closure_result.predecessor_weight_matrix,
-            mst_predecessors,
+            mst_graph,
             visited,
             result_graph);
     }
