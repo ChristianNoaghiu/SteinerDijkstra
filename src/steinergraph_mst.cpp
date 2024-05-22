@@ -294,6 +294,26 @@ SteinerGraph::MetricClosureStruct SteinerGraph::metric_closure()
 }
 
 /**
+ * converts a metric_closure_distance_matrix to a graph
+ * @param metric_closure_distance_matrix metric closure distance matrix from metric_closure()
+ */
+SteinerGraph SteinerGraph::metric_closure_graph(
+    std::vector<std::vector<int>> metric_closure_distance_matrix) const
+{
+    SteinerGraph result = clear_edges();
+    for (NodeId i = 0; i < num_nodes(); i++)
+    {
+        for (NodeId j = i + 1; j < num_nodes(); j++)
+        {
+            int distance = metric_closure_distance_matrix.at(i).at(j);
+            result.add_edge(i, j, distance);
+        }
+    }
+
+    return result;
+}
+
+/**
  * returns a terminal node
  */
 std::optional<SteinerGraph::NodeId> SteinerGraph::find_terminal_node() const

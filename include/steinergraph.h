@@ -60,6 +60,9 @@ public:
     std::vector<std::vector<int>> predecessor_weight_matrix;
   };
   MetricClosureStruct metric_closure() const;
+  SteinerGraph metric_closure_graph(
+      const std::vector<std::vector<int>> metric_closure_distance_matrix)
+      const;
 
   std::optional<NodeId> find_terminal_node() const;
 
