@@ -175,12 +175,12 @@ namespace
 const int SteinerGraph::infinite_weight = std::numeric_limits<int>::max();
 const int SteinerGraph::infinite_distance = std::numeric_limits<int>::max();
 
-void SteinerGraph::add_nodes(NodeId num_new_nodes)
+void SteinerGraph::add_nodes(const NodeId num_new_nodes)
 {
    _nodes.resize(num_nodes() + num_new_nodes);
 }
 
-void SteinerGraph::make_terminal(NodeId new_terminal)
+void SteinerGraph::make_terminal(const NodeId new_terminal)
 {
    if (new_terminal >= num_nodes() or new_terminal < 0)
    {
@@ -190,14 +190,42 @@ void SteinerGraph::make_terminal(NodeId new_terminal)
    _terminals.insert(new_terminal);
 }
 
+void SteinerGraph::set_predecessor(const NodeId node_id, const std::optional<NodeId> predecessor)
+{
+   if (node_id >= num_nodes() or node_id < 0)
+   {
+      throw std::runtime_error("Undefined node");
+   }
+
+   if (predecessor.has_value())
+   {
+      if (predecessor.value() >= num_nodes() || predecessor.value() < 0)
+      {
+         throw std::runtime_error("Undefined predecessor");
+      }
+   }
+
+   _nodes.at(node_id).set_predecessor(predecessor);
+}
+
 void SteinerGraph::Node::set_terminal()
 {
    _terminal = true;
 }
 
-SteinerGraph::Neighbor::Neighbor(SteinerGraph::NodeId n, int w) : _id(n), _edge_weight(w) {}
+void SteinerGraph::Node::set_predecessor(const std::optional<NodeId> predecessor)
+{
+   _predecessor = predecessor;
+}
 
-SteinerGraph::SteinerGraph(NodeId num) : _nodes(num) {}
+const std::optional<SteinerGraph::NodeId> &SteinerGraph::Node::get_predecessor() const
+{
+   return _predecessor;
+}
+
+SteinerGraph::Neighbor::Neighbor(const SteinerGraph::NodeId n, const int w) : _id(n), _edge_weight(w) {}
+
+SteinerGraph::SteinerGraph(const NodeId num) : _nodes(num) {}
 
 // returns a graph with the same nodes and terminals,
 // but without edges
@@ -213,7 +241,7 @@ SteinerGraph SteinerGraph::clear_edges() const
    return result_graph;
 }
 
-void SteinerGraph::add_edge(NodeId tail, NodeId head, int weight)
+void SteinerGraph::add_edge(const NodeId tail, const NodeId head, const int weight)
 {
    if (tail >= num_nodes() or tail < 0 or head >= num_nodes() or head < 0)
    {
@@ -223,7 +251,7 @@ void SteinerGraph::add_edge(NodeId tail, NodeId head, int weight)
    _nodes[head].add_neighbor(tail, weight);
 }
 
-void SteinerGraph::Node::add_neighbor(SteinerGraph::NodeId nodeid, int weight)
+void SteinerGraph::Node::add_neighbor(const SteinerGraph::NodeId nodeid, const int weight)
 {
    _neighbors.push_back(SteinerGraph::Neighbor(nodeid, weight));
 }
@@ -238,7 +266,7 @@ SteinerGraph::NodeId SteinerGraph::num_nodes() const
    return _nodes.size();
 }
 
-const SteinerGraph::Node &SteinerGraph::get_node(NodeId node) const
+const SteinerGraph::Node &SteinerGraph::get_node(const NodeId node) const
 {
    if (node < 0 or node >= static_cast<int>(_nodes.size()))
    {
@@ -260,6 +288,24 @@ bool SteinerGraph::Node::is_terminal() const
 int SteinerGraph::Neighbor::edge_weight() const
 {
    return _edge_weight;
+}
+
+int SteinerGraph::edge_weight_sum() const
+{
+   int result = 0;
+
+   for (auto nodeid = 0; nodeid < num_nodes(); ++nodeid)
+   {
+      for (auto neighbor : get_node(nodeid).adjacent_nodes())
+      {
+         if (neighbor.id() > nodeid) // ensures that edge are counted only once
+         {
+            result += neighbor.edge_weight();
+         }
+      }
+   }
+
+   return result;
 }
 
 void SteinerGraph::print() const
@@ -297,20 +343,7 @@ void SteinerGraph::print() const
       }
    }
 
-   int edge_weight_sum = 0;
-
-   for (auto nodeid = 0; nodeid < num_nodes(); ++nodeid)
-   {
-      for (auto neighbor : get_node(nodeid).adjacent_nodes())
-      {
-         if (neighbor.id() > nodeid) // ensures that edge are counted only once
-         {
-            edge_weight_sum += neighbor.edge_weight();
-         }
-      }
-   }
-
-   std::cout << "\nSum of edge weights: " << edge_weight_sum << "\n";
+   std::cout << "\nSum of edge weights: " << edge_weight_sum() << "\n";
 }
 
 SteinerGraph::SteinerGraph(char const *filename) // Konstruktor der Klasse   -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
@@ -459,5 +492,13 @@ SteinerGraph::SteinerGraph(char const *filename) // Konstruktor der Klasse   -  
    if (!reached_eof)
    {
       throw std::runtime_error("Invalid STP file: File does not end with '" + stp_eof_line + "'.");
+   }
+}
+
+void SteinerGraph::check_valid_node(const NodeId node) const
+{
+   if (node < 0 || node >= num_nodes())
+   {
+      throw std::runtime_error("Invalid NodeId.");
    }
 }

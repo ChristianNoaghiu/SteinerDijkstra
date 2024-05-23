@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <vector>
+#include <functional>
 #include <set>
 
 class SteinerGraph
@@ -12,7 +13,7 @@ public:
   class Neighbor
   {
   public:
-    Neighbor(SteinerGraph::NodeId n, int w);
+    Neighbor(const SteinerGraph::NodeId n, const int w);
     int edge_weight() const;
     SteinerGraph::NodeId id() const;
 
@@ -24,25 +25,29 @@ public:
   class Node
   {
   public:
-    void add_neighbor(SteinerGraph::NodeId nodeid, int weight);
+    void add_neighbor(const SteinerGraph::NodeId nodeid, const int weight);
     const std::vector<Neighbor> &adjacent_nodes() const;
 
     void set_terminal();
+    void set_predecessor(const std::optional<NodeId> predecessor);
+    const std::optional<NodeId> &get_predecessor() const;
     bool is_terminal() const;
 
   private:
     std::vector<Neighbor> _neighbors;
+    std::optional<NodeId> _predecessor = {}; // for MST information
     bool _terminal = false;
   };
 
-  SteinerGraph(NodeId num_nodes);
+  SteinerGraph(const NodeId num_nodes);
   SteinerGraph(char const *filename);
 
   SteinerGraph clear_edges() const;
 
-  void add_nodes(NodeId num_new_nodes);
-  void add_edge(NodeId tail, NodeId head, int weight = 1);
-  void make_terminal(NodeId new_terminal);
+  void add_nodes(const NodeId num_new_nodes);
+  void add_edge(const NodeId tail, const NodeId head, const int weight = 1);
+  void make_terminal(const NodeId new_terminal);
+  void set_predecessor(const NodeId node_id, const std::optional<NodeId> predecessor);
 
   struct DijkstraStruct
   {
@@ -59,26 +64,35 @@ public:
     std::vector<std::vector<int>> predecessor_weight_matrix;
   };
   MetricClosureStruct metric_closure() const;
+  SteinerGraph metric_closure_graph(
+      const std::vector<std::vector<int>> metric_closure_distance_matrix)
+      const;
 
   std::optional<NodeId> find_terminal_node() const;
 
   SteinerGraph steiner_tree_mst_approximation() const;
 
+  SteinerGraph subgraph_mst(
+      const std::function<bool(const NodeId node)> is_in_subgraph)
+      const;
+  SteinerGraph subgraph_mst(
+      const std::function<bool(const NodeId node)> is_in_subgraph,
+      const NodeId start_node)
+      const;
   SteinerGraph component_mst(const NodeId start_node) const;
 
   NodeId num_nodes() const;
-  const Node &get_node(NodeId) const;
+  const Node &get_node(const NodeId node) const;
+  int edge_weight_sum() const;
   void print() const;
 
   static const int infinite_weight;
   static const int infinite_distance;
 
 private:
-  void check_connected_metric_closure(
-      const std::vector<std::vector<int>> &metric_closure_distance_matrix)
-      const;
+  void check_valid_node(const NodeId node) const;
 
-  std::vector<std::optional<NodeId>> terminal_rooted_mst_predecessors(
+  void check_connected_metric_closure(
       const std::vector<std::vector<int>> &metric_closure_distance_matrix)
       const;
 
@@ -86,11 +100,27 @@ private:
       const NodeId &start_node,
       const std::vector<std::vector<std::optional<NodeId>>> &metric_closure_predecessor_matrix,
       const std::vector<std::vector<int>> &metric_closure_predecessor_weight_matrix,
-      const std::vector<std::optional<NodeId>> &mst_predecessors,
+      const SteinerGraph &mst_graph,
       std::vector<bool> &visited,
       SteinerGraph &result_graph)
       const;
 
   std::vector<Node> _nodes;
   std::set<NodeId> _terminals;
+
+  // for queues in Dijkstra's and Prim's algorithms
+  using NodeDistancePair = std::pair<SteinerGraph::NodeId, int>;
+  static std::function<bool(
+      const NodeDistancePair,
+      const NodeDistancePair)>
+  node_distance_pair_compare();
+
+  const std::function<bool(const SteinerGraph::NodeId)> is_in_graph() const;
+  const std::function<bool(const SteinerGraph::NodeId)> is_in_set(const std::set<SteinerGraph::NodeId> &node_set) const;
+
+  double one_tree_bound(
+      const NodeId node,
+      const std::set<NodeId> &node_set,
+      const NodeId r0)
+      const;
 };
