@@ -49,6 +49,12 @@ public:
   void make_terminal(const NodeId new_terminal);
   void set_predecessor(const NodeId node_id, const std::optional<NodeId> predecessor);
 
+  /**
+   * stores results from Dijkstra's algorithm with a fixed start node
+   * @param distances contains the distances from the start node
+   * @param predecessors contains the predecessor of every node on the path towards the start node
+   * @param predecessor_weights contains the weights of the edges towards each predecessor
+   */
   struct DijkstraStruct
   {
     std::vector<int> distances;
@@ -56,6 +62,8 @@ public:
     std::vector<int> predecessor_weights;
   };
   DijkstraStruct dijkstra(const NodeId start_node) const;
+
+  int get_distance(const NodeId node1, const NodeId node2);
 
   struct MetricClosureStruct
   {
@@ -107,6 +115,9 @@ private:
 
   std::vector<Node> _nodes;
   std::set<NodeId> _terminals;
+
+  std::vector<std::optional<std::vector<int>>> _distance_matrix;
+  std::vector<std::optional<std::vector<Neighbor>>> _predecessor_matrix;
 
   // for queues in Dijkstra's and Prim's algorithms
   using NodeDistancePair = std::pair<SteinerGraph::NodeId, int>;

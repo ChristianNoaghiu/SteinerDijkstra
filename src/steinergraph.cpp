@@ -178,6 +178,8 @@ const int SteinerGraph::infinite_distance = std::numeric_limits<int>::max();
 void SteinerGraph::add_nodes(const NodeId num_new_nodes)
 {
    _nodes.resize(num_nodes() + num_new_nodes);
+   _distance_matrix.resize(num_nodes() + num_new_nodes);
+   _predecessor_matrix.resize(num_nodes() + num_new_nodes);
 }
 
 void SteinerGraph::make_terminal(const NodeId new_terminal)

@@ -78,6 +78,32 @@ SteinerGraph::DijkstraStruct SteinerGraph::dijkstra(
 }
 
 /**
+ * returns distance between two nodes dynamically from _distance_matrix
+ */
+int SteinerGraph::get_distance(const NodeId node1, const NodeId node2)
+{
+    if (_distance_matrix.size() != static_cast<unsigned int>(num_nodes()))
+    {
+        throw std::runtime_error("_distance_matrix has wrong size.");
+    }
+
+    if (_distance_matrix.at(node1).has_value())
+    {
+        if (_distance_matrix.at(node1).value().size() != static_cast<unsigned int>(num_nodes()))
+        {
+            throw std::runtime_error("_distance_matrix has wrong size.");
+        }
+    }
+    else
+    {
+        DijkstraStruct dijkstra_result = dijkstra(node1);
+        _distance_matrix.at(node1) = dijkstra_result.distances;
+    }
+
+    return _distance_matrix.at(node1).value().at(node2);
+}
+
+/**
  * computes the metric closure of a graph
  * stores the resulting distances in distance_matrix
  * such that distance_matrix.at(i).at(j) is the distance of nodes i and j
