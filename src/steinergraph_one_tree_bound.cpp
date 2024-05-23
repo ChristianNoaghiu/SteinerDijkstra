@@ -35,6 +35,7 @@ double SteinerGraph::one_tree_bound(
     const std::vector<std::vector<int>> &distance_matrix = metric_closure_result.distance_matrix;
     check_connected_metric_closure(distance_matrix);
 
+    /** @todo do this dynamically */
     const SteinerGraph metric_closure_graph_result = metric_closure_graph(distance_matrix);
     const SteinerGraph mst_graph = metric_closure_graph_result.subgraph_mst(is_in_set(node_set));
     double mst_value = mst_graph.edge_weight_sum();
@@ -50,6 +51,7 @@ double SteinerGraph::one_tree_bound(
                 continue;
             }
 
+            /** @todo do this dynamically */
             int distance_node_i = distance_matrix.at(node).at(i);
             int distance_node_j = distance_matrix.at(node).at(j);
 
