@@ -106,9 +106,13 @@ private:
   std::vector<Node> _nodes;
   std::set<NodeId> _terminals;
 
-  // lambda returning
-  std::function<bool(const SteinerGraph::NodeId)> is_in_graph();
+  // for queues in Dijkstra's and Prim's algorithms
+  using NodeDistancePair = std::pair<SteinerGraph::NodeId, int>;
+  static std::function<bool(
+      const NodeDistancePair,
+      const NodeDistancePair)>
+  node_distance_pair_compare();
 
-  // lambda returning whether a node is contained in node_set
-  std::function<bool(const SteinerGraph::NodeId)> is_in_set(std::set<SteinerGraph::NodeId> node_set);
+  const std::function<bool(const SteinerGraph::NodeId)> is_in_graph() const;
+  const std::function<bool(const SteinerGraph::NodeId)> is_in_set(const std::set<SteinerGraph::NodeId> &node_set) const;
 };
