@@ -10,6 +10,7 @@ double SteinerGraph::one_tree_bound(
     const NodeId r0)
     const
 {
+    // check validity of parameters
     check_valid_node(node);
 
     if (!get_node(r0).is_terminal())
@@ -25,6 +26,7 @@ double SteinerGraph::one_tree_bound(
         }
     }
 
+    // second case of one-tree bound definition
     if (node_set.count(r0) == 0)
     {
         return 0.0;
@@ -40,6 +42,7 @@ double SteinerGraph::one_tree_bound(
     const SteinerGraph mst_graph = metric_closure_graph_result.subgraph_mst(is_in_set(node_set));
     double mst_value = mst_graph.edge_weight_sum();
 
+    // compute the minimum of d(v,i) + d(v,j) as in the definition of the one-tree bound
     int distance_sum = std::numeric_limits<int>::max();
 
     for (auto i : node_set)
@@ -60,6 +63,7 @@ double SteinerGraph::one_tree_bound(
                 throw std::runtime_error("Distances too large, will provoke overflow.");
             }
 
+            // for having the minimum in the end
             int new_distance_sum = distance_node_i + distance_node_j;
             if (new_distance_sum < distance_sum)
             {

@@ -36,6 +36,7 @@ SteinerGraph SteinerGraph::subgraph_mst(
     // stores whether a node has been removed from the Prim queue
     std::vector<bool> visited(num_nodes(), false);
 
+    // priority queue for Prim's algorithm
     const auto compare_function = node_distance_pair_compare();
     std::priority_queue<NodeDistancePair, std::vector<NodeDistancePair>, decltype(compare_function)>
         prim_queue(compare_function);
@@ -64,6 +65,7 @@ SteinerGraph SteinerGraph::subgraph_mst(
         }
         visited.at(current_node) = true;
 
+        // set predecessor (if not at start_node) and add this incoming edge to result graph
         if (current_node != start_node)
         {
             std::optional<NodeId> predecessor_optional = predecessors.at(current_node);
