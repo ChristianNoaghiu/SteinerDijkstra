@@ -18,10 +18,7 @@ SteinerGraph SteinerGraph::subgraph_mst(
         throw std::runtime_error("Graph has no vertices.");
     }
 
-    if (start_node >= num_nodes())
-    {
-        throw std::runtime_error("Invalid start_node");
-    }
+    check_valid_node(start_node);
 
     if (!is_in_subgraph(start_node))
     {

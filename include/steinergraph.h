@@ -90,6 +90,8 @@ public:
   static const int infinite_distance;
 
 private:
+  void check_valid_node(const NodeId node) const;
+
   void check_connected_metric_closure(
       const std::vector<std::vector<int>> &metric_closure_distance_matrix)
       const;
@@ -115,4 +117,10 @@ private:
 
   const std::function<bool(const SteinerGraph::NodeId)> is_in_graph() const;
   const std::function<bool(const SteinerGraph::NodeId)> is_in_set(const std::set<SteinerGraph::NodeId> &node_set) const;
+
+  double one_tree_bound(
+      const NodeId node,
+      const std::set<NodeId> &node_set,
+      const NodeId r0)
+      const;
 };

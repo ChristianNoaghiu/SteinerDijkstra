@@ -494,3 +494,11 @@ SteinerGraph::SteinerGraph(char const *filename) // Konstruktor der Klasse   -  
       throw std::runtime_error("Invalid STP file: File does not end with '" + stp_eof_line + "'.");
    }
 }
+
+void SteinerGraph::check_valid_node(const NodeId node) const
+{
+   if (node < 0 || node >= num_nodes())
+   {
+      throw std::runtime_error("Invalid NodeId.");
+   }
+}
