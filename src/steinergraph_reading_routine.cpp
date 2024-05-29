@@ -203,97 +203,98 @@ namespace
         }
         return terminals;
     }
+}
 
-    SteinerGraph::SteinerGraph(char const *filename) // Konstruktor der Klasse   -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+SteinerGraph::SteinerGraph(char const *filename) // Konstruktor der Klasse   -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+{
+    std::ifstream file(filename); // open file
+    if (not file)
     {
-        std::ifstream file(filename); // open file
-        if (not file)
-        {
-            throw std::runtime_error("Cannot open file.");
-        }
-
-        // SteinerGraph::NodeId num = 0;
-        std::string line;
-        std::getline(file, line); // get first line of file
-        // std::cout << line << std::endl;
-
-        STPSection last_section = NoSection; // Variables to save where we are in the file and if a new section is in the right order
-        STPSection current_section = NoSection;
-
-        if (line != stp_control_line)
-        {
-            throw std::runtime_error("Invalid STP file: Does not start with STP control line.");
-        }
-
-        bool reached_eof = false;
-
-        int num_terminals = -1;
-        std::string keyword = "";
-
-        while (std::getline(file, line)) // while-loop that reads the file line by line
-        {
-            if (reached_eof)
-            {
-                throw std::runtime_error("Invalid STP file: Reached '" + stp_eof_line + "' before end of file.");
-            }
-
-            if (line == stp_eof_line)
-            {
-                if (current_section != NoSection)
-                {
-                    throw std::runtime_error("Invalid STP file: Reached '" + stp_eof_line + "' before section was closed.");
-                }
-                reached_eof = true;
-                continue;
-            }
-
-            if (current_section == NoSection) // Checking if a new Section begins here
-            {
-                if (!(check_for_sections(current_section, last_section, line)))
-                {
-                    if (line != stp_empty_line)
-                    {
-                        throw std::runtime_error("Invalid STP file: Found non-empty line outside section.");
-                    }
-                }
-                continue;
-            }
-            else
-            {
-                if (check_for_sections(current_section, last_section, line)) // Checking if a Section wasn't closed, since a new Section was opened inside another one
-                {
-                    throw std::runtime_error("Invalid STP file: Found beginning of new section inside of a section.");
-                }
-                if (current_section == CommentSection or current_section == MaximumDegreesSection or current_section == CoordinatesSection)
-                {
-                    if (line == stp_end_line) // Checking if the Section ends here and skip if not, since nothing is done with the contents
-                    {
-                        current_section = NoSection;
-                    }
-                    continue;
-                }
-                if (current_section == GraphSection) // read-in routine for the graph section
-                {
-                    SteinerGraph temp = graph_section(file);
-                    *this = temp;
-                    last_section = GraphSection;
-                    current_section = NoSection;
-                }
-                if (current_section == TerminalsSection)
-                {
-                    std::vector<int> terminals = terminals_section(file);
-                    for (int terminal_it : terminals)
-                    {
-                        make_terminal(terminal_it);
-                    }
-                    last_section = TerminalsSection;
-                    current_section = NoSection;
-                }
-            }
-        } // -   -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
-
-        if (!reached_eof)
-        {
-            throw std::runtime_error("Invalid STP file: File does not end with '" + stp_eof_line + "'.");
-        }
+        throw std::runtime_error("Cannot open file.");
     }
+
+    // SteinerGraph::NodeId num = 0;
+    std::string line;
+    std::getline(file, line); // get first line of file
+    // std::cout << line << std::endl;
+
+    STPSection last_section = NoSection; // Variables to save where we are in the file and if a new section is in the right order
+    STPSection current_section = NoSection;
+
+    if (line != stp_control_line)
+    {
+        throw std::runtime_error("Invalid STP file: Does not start with STP control line.");
+    }
+
+    bool reached_eof = false;
+
+    int num_terminals = -1;
+    std::string keyword = "";
+
+    while (std::getline(file, line)) // while-loop that reads the file line by line
+    {
+        if (reached_eof)
+        {
+            throw std::runtime_error("Invalid STP file: Reached '" + stp_eof_line + "' before end of file.");
+        }
+
+        if (line == stp_eof_line)
+        {
+            if (current_section != NoSection)
+            {
+                throw std::runtime_error("Invalid STP file: Reached '" + stp_eof_line + "' before section was closed.");
+            }
+            reached_eof = true;
+            continue;
+        }
+
+        if (current_section == NoSection) // Checking if a new Section begins here
+        {
+            if (!(check_for_sections(current_section, last_section, line)))
+            {
+                if (line != stp_empty_line)
+                {
+                    throw std::runtime_error("Invalid STP file: Found non-empty line outside section.");
+                }
+            }
+            continue;
+        }
+        else
+        {
+            if (check_for_sections(current_section, last_section, line)) // Checking if a Section wasn't closed, since a new Section was opened inside another one
+            {
+                throw std::runtime_error("Invalid STP file: Found beginning of new section inside of a section.");
+            }
+            if (current_section == CommentSection or current_section == MaximumDegreesSection or current_section == CoordinatesSection)
+            {
+                if (line == stp_end_line) // Checking if the Section ends here and skip if not, since nothing is done with the contents
+                {
+                    current_section = NoSection;
+                }
+                continue;
+            }
+            if (current_section == GraphSection) // reading routine for the graph section
+            {
+                SteinerGraph temp = graph_section(file);
+                *this = temp;
+                last_section = GraphSection;
+                current_section = NoSection;
+            }
+            if (current_section == TerminalsSection) // reading routine for the terminals section
+            {
+                std::vector<int> terminals = terminals_section(file);
+                for (int terminal_it : terminals)
+                {
+                    make_terminal(terminal_it);
+                }
+                last_section = TerminalsSection;
+                current_section = NoSection;
+            }
+        }
+    } // -   -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+
+    if (!reached_eof)
+    {
+        throw std::runtime_error("Invalid STP file: File does not end with '" + stp_eof_line + "'.");
+    }
+}
