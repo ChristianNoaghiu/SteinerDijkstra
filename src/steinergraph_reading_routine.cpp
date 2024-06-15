@@ -228,7 +228,6 @@ SteinerGraph::SteinerGraph(char const *filename) // Konstruktor der Klasse   -  
 
     bool reached_eof = false;
 
-    int num_terminals = -1;
     std::string keyword = "";
 
     while (std::getline(file, line)) // while-loop that reads the file line by line
