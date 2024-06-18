@@ -6,7 +6,7 @@
  */
 double SteinerGraph::one_tree_bound(
     const NodeId node,
-    const std::set<NodeId> &node_set,
+    const std::unordered_set<NodeId> &node_set,
     const NodeId r0)
     const
 {

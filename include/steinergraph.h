@@ -3,7 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <functional>
-#include <set>
+#include <unordered_set>
 
 class SteinerGraph
 {
@@ -106,7 +106,7 @@ private:
       const;
 
   std::vector<Node> _nodes;
-  std::set<NodeId> _terminals;
+  std::unordered_set<NodeId> _terminals;
 
   // for queues in Dijkstra's and Prim's algorithms
   using NodeDistancePair = std::pair<SteinerGraph::NodeId, int>;
@@ -116,11 +116,12 @@ private:
   node_distance_pair_compare();
 
   const std::function<bool(const SteinerGraph::NodeId)> is_in_graph() const;
-  const std::function<bool(const SteinerGraph::NodeId)> is_in_set(const std::set<SteinerGraph::NodeId> &node_set) const;
+  const std::function<bool(const SteinerGraph::NodeId)> is_in_set(const std::unordered_set<SteinerGraph::NodeId> &node_set) const;
 
   double one_tree_bound(
       const NodeId node,
-      const std::set<NodeId> &node_set,
+      const std::unordered_set<NodeId> &node_set,
       const NodeId r0)
       const;
+  // std::vector<std::pair<int, int>> SteinerGraph::dijkstras_steiner(NodeId r0, bool lower_bound);
 };
