@@ -81,10 +81,9 @@ namespace
     /**
 
      */
-    SteinerGraph graph_section(std::ifstream &file)
+    SteinerGraph graph_section(std::ifstream &file, const std::string &old_line)
     {
-        std::string line;
-        std::getline(file, line);
+        std::string line = old_line;
         std::stringstream ss(line);
         std::string _keyword = "";
         ss >> _keyword;
@@ -101,6 +100,7 @@ namespace
                     throw std::runtime_error("Invalid STP file: Contains 'Nodes' keyword more than once.");
                 }
                 ss >> num_nodes;
+
                 if (num_nodes < 0)
                 {
                     throw std::runtime_error("Invalid STP file: The number of nodes cannot be negative.");
@@ -131,14 +131,16 @@ namespace
                 {
                     throw std::runtime_error("Invalid STP file: Edge-endpoints need to be defined/be greater or equal to zero.");
                 }
-                graph.add_edge(tail, head, weight);
+                graph.add_edge(tail - 1, head - 1, weight);
             }
             else
             {
                 throw std::runtime_error("Invalid STP file: Invalid line in graphsection.");
             }
+            ss.str("");
+            ss.clear();
             std::getline(file, line);
-            std::stringstream ss(line);
+            ss << line;
             ss >> _keyword;
         }
         if (num_edges != edge_counter)
@@ -159,9 +161,9 @@ namespace
      * Checking for lines belonging to the terminals-section.
      * The output-number tells which kind of information was in the line given.
      */
-    std::vector<int> terminals_section(std::ifstream &file)
+    std::vector<int> terminals_section(std::ifstream &file, const std::string &old_line)
     {
-        std::string line;
+        std::string line = old_line;
         std::stringstream ss(line);
         std::string _keyword = "";
         ss >> _keyword;
@@ -186,15 +188,17 @@ namespace
             else if (_keyword == stp_terminals_terminal_keyword)
             {
                 ss >> _node;
-                terminals.push_back(_node);
+                terminals.push_back(_node - 1);
                 terminal_counter++;
             }
             else
             {
                 throw std::runtime_error("Invalid STP file: Invalid line in terminalssection.");
             }
+            ss.str("");
+            ss.clear();
             std::getline(file, line);
-            std::stringstream ss(line);
+            ss << line;
             ss >> _keyword;
         }
         if (num_terminals != terminal_counter)
@@ -264,6 +268,9 @@ SteinerGraph::SteinerGraph(char const *filename) // Konstruktor der Klasse   -  
             {
                 throw std::runtime_error("Invalid STP file: Found beginning of new section inside of a section.");
             }
+        }
+        if (current_section != NoSection)
+        {
             if (current_section == CommentSection or current_section == MaximumDegreesSection or current_section == CoordinatesSection)
             {
                 if (line == stp_end_line) // Checking if the Section ends here and skip if not, since nothing is done with the contents
@@ -274,14 +281,14 @@ SteinerGraph::SteinerGraph(char const *filename) // Konstruktor der Klasse   -  
             }
             if (current_section == GraphSection) // reading routine for the graph section
             {
-                SteinerGraph temp = graph_section(file);
+                SteinerGraph temp = graph_section(file, line);
                 *this = temp;
                 last_section = GraphSection;
                 current_section = NoSection;
             }
             if (current_section == TerminalsSection) // reading routine for the terminals section
             {
-                std::vector<int> terminals = terminals_section(file);
+                std::vector<int> terminals = terminals_section(file, line);
                 for (int terminal_it : terminals)
                 {
                     make_terminal(terminal_it);
