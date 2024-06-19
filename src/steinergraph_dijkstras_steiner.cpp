@@ -1,4 +1,26 @@
 #include "steinergraph.h"
+#include <queue>
+
+#include <bitset>
+#include <vector>
+
+std::vector<std::pair<int, int>> SteinerGraph::dijkstras_steiner(NodeId r0, bool lower_bound)
+{
+
+    // check if r0 is a terminal
+
+    using l_pair = std::pair<NodeId, std::bitset<64>>;
+    std::unordered_map<l_pair, double, std::hash<std::bitset<64>>> labels;
+
+    for (NodeId terminal : _terminals)
+    {
+        if (terminal == r0)
+            continue;
+    }
+    labels[l_pair(terminal, std::bitset<64>(1 << terminal))];
+}
+
+// Actual Code bei dem was passiert
 
 /*
 dijkstras_steiner
