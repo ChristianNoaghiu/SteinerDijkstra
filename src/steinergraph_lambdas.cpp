@@ -26,14 +26,12 @@ SteinerGraph::node_distance_pair_compare()
  */
 const std::function<bool(const SteinerGraph::NodeId)> SteinerGraph::is_in_graph() const
 {
-    return [](const SteinerGraph::NodeId node)
+    return [](__attribute__((unused)) const SteinerGraph::NodeId node)
     {
         /**
          * @todo Wunused complains about node not being used,
          * therefore this redundant comparison
          */
-        if (node + 1 == node + 1)
-            return true;
         return true;
     };
 }
@@ -47,5 +45,27 @@ const std::function<bool(const SteinerGraph::NodeId)> SteinerGraph::is_in_set(co
     return [node_set = node_set](const SteinerGraph::NodeId node)
     {
         return node_set.count(node) != 0;
+    };
+}
+
+const std::function<bool(const SteinerGraph::NodeId)> SteinerGraph::is_in_terminal_subset(const SteinerGraph::TerminalSubset &terminal_subset) const
+{
+    return [&terminal_subset = terminal_subset, &terminals = _terminals_vector](const SteinerGraph::NodeId node)
+    {
+        auto terminal_iterator = std::find(terminals.begin(), terminals.end(), node);
+
+        if (terminal_iterator == terminals.end())
+        {
+            return false;
+        }
+
+        const TerminalId terminal_id = std::distance(terminals.begin(), terminal_iterator);
+
+        if (static_cast<size_t>(terminal_id) >= terminal_subset.size())
+        {
+            throw std::runtime_error("TerminalId exceeds the size of terminal_subset");
+        }
+
+        return terminal_subset[terminal_id] != 0;
     };
 }

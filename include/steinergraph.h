@@ -4,11 +4,15 @@
 #include <vector>
 #include <functional>
 #include <set>
+#include <bitset>
+#include <unordered_map>
 
 class SteinerGraph
 {
 public:
   using NodeId = int; // vertices are numbered 0,...,num_nodes()-1
+  using TerminalId = int;
+  using TerminalSubset = std::bitset<64>;
 
   class Neighbor
   {
@@ -82,6 +86,7 @@ public:
   SteinerGraph component_mst(const NodeId start_node) const;
 
   NodeId num_nodes() const;
+  TerminalId num_terminals() const;
   const Node &get_node(const NodeId node) const;
   int edge_weight_sum() const;
   void print() const;
@@ -89,8 +94,12 @@ public:
   static const int infinite_weight;
   static const int infinite_distance;
 
+  /** @todo remove this */
+  void test_one_tree_bound() const;
+
 private:
   void check_valid_node(const NodeId node) const;
+  void check_valid_terminal(const TerminalId node) const;
 
   void check_connected_metric_closure(
       const std::vector<std::vector<int>> &metric_closure_distance_matrix)
@@ -106,7 +115,9 @@ private:
       const;
 
   std::vector<Node> _nodes;
+  /** @todo replace this */
   std::set<NodeId> _terminals;
+  std::vector<NodeId> _terminals_vector;
 
   // for queues in Dijkstra's and Prim's algorithms
   using NodeDistancePair = std::pair<SteinerGraph::NodeId, int>;
@@ -117,10 +128,25 @@ private:
 
   const std::function<bool(const SteinerGraph::NodeId)> is_in_graph() const;
   const std::function<bool(const SteinerGraph::NodeId)> is_in_set(const std::set<SteinerGraph::NodeId> &node_set) const;
+  const std::function<bool(const SteinerGraph::NodeId)> is_in_terminal_subset(const TerminalSubset &terminal_subset) const;
 
   double one_tree_bound(
       const NodeId node,
-      const std::set<NodeId> &node_set,
-      const NodeId r0)
+      const TerminalSubset &terminal_subset,
+      const TerminalId r0)
       const;
+  double tsp_bound(
+      const NodeId node,
+      const std::set<NodeId> &node_set)
+      const;
+
+  /*using NodeTerminalSubsetPair = std::pair<NodeId, TerminalSubset>;
+  using NodeTerminalSubsetToDoubleMap = std::unordered_map<NodeTerminalSubsetPair, double>;
+
+  using NodeNodeSet = std::tuple<SteinerGraph::NodeId, SteinerGraph::NodeId, std::set<SteinerGraph::NodeId>>;
+  std::unordered_map<NodeNodeSet, double> hamiltonian_path_in_metric_closure_subset(
+      const std::vector<std::vector<int>> &distance_matrix)
+      const;*/
+
+  static int terminal_subset_size(const TerminalSubset &terminal_subset);
 };

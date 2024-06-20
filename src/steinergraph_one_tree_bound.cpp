@@ -6,28 +6,21 @@
  */
 double SteinerGraph::one_tree_bound(
     const NodeId node,
-    const std::set<NodeId> &node_set,
-    const NodeId r0)
+    const SteinerGraph::TerminalSubset &terminal_subset,
+    const TerminalId r0)
     const
 {
     // check validity of parameters
     check_valid_node(node);
+    check_valid_terminal(r0);
 
-    if (!get_node(r0).is_terminal())
+    if (r0 >= static_cast<int>(terminal_subset.size()))
     {
-        throw std::runtime_error("r0 is not a terminal node");
-    }
-
-    for (auto node : node_set)
-    {
-        if (!get_node(node).is_terminal())
-        {
-            throw std::runtime_error("node_set is not a subset of terminal set");
-        }
+        throw std::runtime_error("r0 exceeds the size of terminal_subset");
     }
 
     // second case of one-tree bound definition
-    if (node_set.count(r0) == 0)
+    if (terminal_subset[r0] == 0)
     {
         return 0.0;
     }
@@ -39,24 +32,37 @@ double SteinerGraph::one_tree_bound(
 
     /** @todo do this dynamically */
     const SteinerGraph metric_closure_graph_result = metric_closure_graph(distance_matrix);
-    const SteinerGraph mst_graph = metric_closure_graph_result.subgraph_mst(is_in_set(node_set));
+    const SteinerGraph mst_graph = metric_closure_graph_result.subgraph_mst(is_in_terminal_subset(terminal_subset));
     double mst_value = mst_graph.edge_weight_sum();
 
     // compute the minimum of d(v,i) + d(v,j) as in the definition of the one-tree bound
     int distance_sum = std::numeric_limits<int>::max();
 
-    for (auto i : node_set)
+    for (TerminalId i = 0; i < num_terminals(); i++)
     {
-        for (auto j : node_set)
+        if (terminal_subset[i] == 0)
         {
-            if (i == j && node_set.size() > 1)
+            continue;
+        }
+
+        for (TerminalId j = 0; j < num_terminals(); j++)
+        {
+            if (terminal_subset[j] == 0)
+            {
+                continue;
+            }
+
+            NodeId node_i = _terminals_vector.at(i);
+            NodeId node_j = _terminals_vector.at(j);
+
+            if (i == j && terminal_subset_size(terminal_subset) > 1)
             {
                 continue;
             }
 
             /** @todo do this dynamically */
-            int distance_node_i = distance_matrix.at(node).at(i);
-            int distance_node_j = distance_matrix.at(node).at(j);
+            int distance_node_i = distance_matrix.at(node).at(node_i);
+            int distance_node_j = distance_matrix.at(node).at(node_j);
 
             if (distance_node_j > std::numeric_limits<int>::max() - distance_node_i)
             {
