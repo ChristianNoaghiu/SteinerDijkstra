@@ -201,4 +201,8 @@ void SteinerGraph::check_valid_terminal(const TerminalId terminal) const
    {
       throw std::runtime_error("Invalid TerminalId.");
    }
+   if (terminal >= 64)
+   {
+      throw std::runtime_error("TerminalId exceeds the size of TerminalSubset.");
+   }
 }

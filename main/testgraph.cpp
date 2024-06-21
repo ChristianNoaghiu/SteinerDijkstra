@@ -10,7 +10,7 @@ int main(int argc, char *argv[])
         SteinerGraph g(argv[1]);
 
         /** @todo remove this */
-        g.test_one_tree_bound();
+        g.test_tsp_bound();
 
         /** @todo execute complete algorithm */
         SteinerGraph h = g.steiner_tree_mst_approximation();
