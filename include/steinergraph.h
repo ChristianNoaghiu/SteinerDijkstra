@@ -97,6 +97,7 @@ public:
 
   /** @todo remove this */
   void test_one_tree_bound();
+  void test_tsp_bound();
 
 private:
   void check_valid_node(const NodeId node) const;
@@ -131,6 +132,11 @@ private:
   const std::function<bool(const SteinerGraph::NodeId)> is_in_set(const std::unordered_set<SteinerGraph::NodeId> &node_set) const;
   const std::function<bool(const SteinerGraph::NodeId)> is_in_terminal_subset(const TerminalSubset &terminal_subset) const;
 
+  std::vector<std::vector<int>> _distance_matrix;
+  bool _computed_distance_matrix = false;
+  void compute_distances_and_check_connected();
+  int get_or_compute_distance(const NodeId node1, const NodeId node2);
+
   /** @todo outsource this to separate algorithm class */
   struct PairHash
   {
@@ -139,6 +145,17 @@ private:
     std::size_t operator()(const std::pair<T, U> &x) const
     {
       return std::hash<T>()(x.first) ^ std::hash<U>()(x.second);
+    }
+  };
+
+  /** @todo outsource this to separate algorithm class */
+  struct TripleHash
+  {
+  public:
+    template <typename T, typename U, typename V>
+    std::size_t operator()(const std::tuple<T, U, V> &x) const
+    {
+      return std::hash<T>()(std::get<0>(x)) ^ std::hash<U>()(std::get<1>(x)) ^ std::hash<V>()(std::get<2>(x));
     }
   };
 
@@ -152,5 +169,18 @@ private:
       const TerminalSubset &terminal_subset,
       const TerminalId r0);
 
+  /** @todo check if all functions are really used */
+  using HamiltonianPathKey = std::tuple<NodeId, NodeId, TerminalSubset>;
+  using HamiltonianPathKeyToDoubleMap = std::unordered_map<HamiltonianPathKey, double, TripleHash>;
+  HamiltonianPathKeyToDoubleMap _hamiltonian_paths;
+  double get_hamiltonian_path(const HamiltonianPathKey &key) const;
+  bool is_hamiltonian_path_computed = false;
+  void compute_hamiltonian_paths();
+  BoundKeyToDoubleMap _computed_tsp_bounds;
+  double get_or_compute_tsp_bound(
+      const NodeId node,
+      const TerminalSubset &terminal_subset);
+
   static int terminal_subset_size(const TerminalSubset &terminal_subset);
+  TerminalSubset one_element_terminal_subset(const TerminalId terminal_id) const;
 };
