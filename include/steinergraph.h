@@ -128,7 +128,7 @@ private:
   node_distance_pair_compare();
 
   const std::function<bool(const SteinerGraph::NodeId)> is_in_graph() const;
-  const std::function<bool(const SteinerGraph::NodeId)> is_in_set(const std::set<SteinerGraph::NodeId> &node_set) const;
+  const std::function<bool(const SteinerGraph::NodeId)> is_in_set(const std::unordered_set<SteinerGraph::NodeId> &node_set) const;
   const std::function<bool(const SteinerGraph::NodeId)> is_in_terminal_subset(const TerminalSubset &terminal_subset) const;
 
   /** @todo outsource this to separate algorithm class */
