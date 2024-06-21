@@ -9,6 +9,10 @@ int main(int argc, char *argv[])
     {
         SteinerGraph g(argv[1]);
 
+        /** @todo remove this */
+        g.test_one_tree_bound();
+
+        /** @todo execute complete algorithm */
         SteinerGraph h = g.steiner_tree_mst_approximation();
 
         std::cout << "-- Printing MST approximation for Steiner tree --\n\n";

@@ -95,7 +95,7 @@ public:
   static const int infinite_distance;
 
   /** @todo remove this */
-  void test_one_tree_bound() const;
+  void test_one_tree_bound();
 
 private:
   void check_valid_node(const NodeId node) const;
@@ -130,23 +130,31 @@ private:
   const std::function<bool(const SteinerGraph::NodeId)> is_in_set(const std::set<SteinerGraph::NodeId> &node_set) const;
   const std::function<bool(const SteinerGraph::NodeId)> is_in_terminal_subset(const TerminalSubset &terminal_subset) const;
 
-  double one_tree_bound(
-      const NodeId node,
-      const TerminalSubset &terminal_subset,
-      const TerminalId r0)
-      const;
   double tsp_bound(
       const NodeId node,
       const std::set<NodeId> &node_set)
       const;
 
-  /*using NodeTerminalSubsetPair = std::pair<NodeId, TerminalSubset>;
-  using NodeTerminalSubsetToDoubleMap = std::unordered_map<NodeTerminalSubsetPair, double>;
+  /** @todo outsource this to separate algorithm class */
+  struct PairHash
+  {
+  public:
+    template <typename T, typename U>
+    std::size_t operator()(const std::pair<T, U> &x) const
+    {
+      return std::hash<T>()(x.first) ^ std::hash<U>()(x.second);
+    }
+  };
 
-  using NodeNodeSet = std::tuple<SteinerGraph::NodeId, SteinerGraph::NodeId, std::set<SteinerGraph::NodeId>>;
-  std::unordered_map<NodeNodeSet, double> hamiltonian_path_in_metric_closure_subset(
-      const std::vector<std::vector<int>> &distance_matrix)
-      const;*/
+  using BoundKey = std::pair<NodeId, TerminalSubset>;
+  using BoundKeyToDoubleMap = std::unordered_map<BoundKey, double, PairHash>;
+
+  std::optional<TerminalId> _computed_one_tree_bound_root_terminal;
+  BoundKeyToDoubleMap _computed_one_tree_bounds;
+  double get_or_compute_one_tree_bound(
+      const NodeId node,
+      const TerminalSubset &terminal_subset,
+      const TerminalId r0);
 
   static int terminal_subset_size(const TerminalSubset &terminal_subset);
 };

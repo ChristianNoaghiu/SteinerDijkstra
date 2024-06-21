@@ -4,11 +4,10 @@
 /**
  * returns the 1-tree-bound from the Dijkstra-Steiner algorithm
  */
-double SteinerGraph::one_tree_bound(
+double SteinerGraph::get_or_compute_one_tree_bound(
     const NodeId node,
     const SteinerGraph::TerminalSubset &terminal_subset,
     const TerminalId r0)
-    const
 {
     // check validity of parameters
     check_valid_node(node);
@@ -25,6 +24,21 @@ double SteinerGraph::one_tree_bound(
         return 0.0;
     }
 
+    if (!_computed_one_tree_bound_root_terminal.has_value())
+    {
+        _computed_one_tree_bound_root_terminal = r0;
+    }
+    else if (_computed_one_tree_bound_root_terminal.value() != r0)
+    {
+        throw std::runtime_error("Root terminal of one-tree bound computation does not match.");
+    }
+
+    const BoundKey bound_key = std::make_pair(node, terminal_subset);
+    if (_computed_one_tree_bounds.count(bound_key) > 0)
+    {
+        return _computed_one_tree_bounds[bound_key];
+    }
+
     // compute the metric closure and subgraph MST on it
     const MetricClosureStruct metric_closure_result = metric_closure();
     const std::vector<std::vector<int>> &distance_matrix = metric_closure_result.distance_matrix;
@@ -38,6 +52,7 @@ double SteinerGraph::one_tree_bound(
     // compute the minimum of d(v,i) + d(v,j) as in the definition of the one-tree bound
     int distance_sum = std::numeric_limits<int>::max();
 
+    /** @todo maybe do this by index shifting */
     for (TerminalId i = 0; i < num_terminals(); i++)
     {
         if (terminal_subset[i] == 0)
@@ -78,5 +93,20 @@ double SteinerGraph::one_tree_bound(
         }
     }
 
-    return (static_cast<double>(distance_sum) / 2) + (static_cast<double>(mst_value) / 2);
+    double result = (static_cast<double>(distance_sum) / 2) + (static_cast<double>(mst_value) / 2);
+    _computed_one_tree_bounds[bound_key] = result;
+    return result;
+}
+
+/** @todo remove this */
+void SteinerGraph::test_one_tree_bound()
+{
+    /*double x1 = get_or_compute_one_tree_bound(0, 0b111, 0);
+    double x2 = get_or_compute_one_tree_bound(0, 0b111, 0);*/
+    std::cout << get_or_compute_one_tree_bound(0, 0b011, 0) << "\n";
+    std::cout << get_or_compute_one_tree_bound(1, 0b011, 0) << "\n";
+    std::cout << get_or_compute_one_tree_bound(2, 0b011, 0) << "\n";
+    std::cout << get_or_compute_one_tree_bound(3, 0b011, 0) << "\n";
+    std::cout << get_or_compute_one_tree_bound(4, 0b011, 0) << "\n";
+    std::cout << get_or_compute_one_tree_bound(0, 0b001, 0) << "\n";
 }
