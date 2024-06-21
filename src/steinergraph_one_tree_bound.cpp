@@ -24,6 +24,7 @@ double SteinerGraph::get_or_compute_one_tree_bound(
         return 0.0;
     }
 
+    // check if r0 is the same as in previous computations
     if (!_computed_one_tree_bound_root_terminal.has_value())
     {
         _computed_one_tree_bound_root_terminal = r0;
@@ -33,6 +34,7 @@ double SteinerGraph::get_or_compute_one_tree_bound(
         throw std::runtime_error("Root terminal of one-tree bound computation does not match.");
     }
 
+    // check if the bound has already been computed and return it
     const BoundKey bound_key = std::make_pair(node, terminal_subset);
     if (_computed_one_tree_bounds.count(bound_key) > 0)
     {
@@ -52,6 +54,7 @@ double SteinerGraph::get_or_compute_one_tree_bound(
     // compute the minimum of d(v,i) + d(v,j) as in the definition of the one-tree bound
     int distance_sum = std::numeric_limits<int>::max();
 
+    // iterate over all pairs of terminals
     /** @todo maybe do this by index shifting */
     for (TerminalId i = 0; i < num_terminals(); i++)
     {
@@ -70,11 +73,13 @@ double SteinerGraph::get_or_compute_one_tree_bound(
             NodeId node_i = _terminals_vector.at(i);
             NodeId node_j = _terminals_vector.at(j);
 
+            // if terminal_subset contains more than one node, the definition excludes the case i == j
             if (i == j && terminal_subset_size(terminal_subset) > 1)
             {
                 continue;
             }
 
+            // compute sum of distances as in definition
             /** @todo do this dynamically */
             int distance_node_i = distance_matrix.at(node).at(node_i);
             int distance_node_j = distance_matrix.at(node).at(node_j);
@@ -93,6 +98,7 @@ double SteinerGraph::get_or_compute_one_tree_bound(
         }
     }
 
+    // store the result dynamically
     double result = (static_cast<double>(distance_sum) / 2) + (static_cast<double>(mst_value) / 2);
     _computed_one_tree_bounds[bound_key] = result;
     return result;
