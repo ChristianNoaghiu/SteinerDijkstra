@@ -3,12 +3,17 @@
 #include <iostream>
 #include <vector>
 #include <functional>
+#include <set>
+#include <bitset>
+#include <unordered_map>
 #include <unordered_set>
 
 class SteinerGraph
 {
 public:
   using NodeId = int; // vertices are numbered 0,...,num_nodes()-1
+  using TerminalId = int;
+  using TerminalSubset = std::bitset<64>;
 
   class Neighbor
   {
@@ -82,6 +87,7 @@ public:
   SteinerGraph component_mst(const NodeId start_node) const;
 
   NodeId num_nodes() const;
+  TerminalId num_terminals() const;
   const Node &get_node(const NodeId node) const;
   int edge_weight_sum() const;
   void print() const;
@@ -89,8 +95,12 @@ public:
   static const int infinite_weight;
   static const int infinite_distance;
 
+  /** @todo remove this */
+  void test_one_tree_bound();
+
 private:
   void check_valid_node(const NodeId node) const;
+  void check_valid_terminal(const TerminalId node) const;
 
   void check_connected_metric_closure(
       const std::vector<std::vector<int>> &metric_closure_distance_matrix)
@@ -106,7 +116,9 @@ private:
       const;
 
   std::vector<Node> _nodes;
+  /** @todo replace this */
   std::unordered_set<NodeId> _terminals;
+  std::vector<NodeId> _terminals_vector;
 
   // for queues in Dijkstra's and Prim's algorithms
   using NodeDistancePair = std::pair<SteinerGraph::NodeId, int>;
@@ -117,11 +129,28 @@ private:
 
   const std::function<bool(const SteinerGraph::NodeId)> is_in_graph() const;
   const std::function<bool(const SteinerGraph::NodeId)> is_in_set(const std::unordered_set<SteinerGraph::NodeId> &node_set) const;
+  const std::function<bool(const SteinerGraph::NodeId)> is_in_terminal_subset(const TerminalSubset &terminal_subset) const;
 
-  double one_tree_bound(
+  /** @todo outsource this to separate algorithm class */
+  struct PairHash
+  {
+  public:
+    template <typename T, typename U>
+    std::size_t operator()(const std::pair<T, U> &x) const
+    {
+      return std::hash<T>()(x.first) ^ std::hash<U>()(x.second);
+    }
+  };
+
+  using BoundKey = std::pair<NodeId, TerminalSubset>;
+  using BoundKeyToDoubleMap = std::unordered_map<BoundKey, double, PairHash>;
+
+  std::optional<TerminalId> _computed_one_tree_bound_root_terminal;
+  BoundKeyToDoubleMap _computed_one_tree_bounds;
+  double get_or_compute_one_tree_bound(
       const NodeId node,
-      const std::unordered_set<NodeId> &node_set,
-      const NodeId r0)
-      const;
-  // std::vector<std::pair<int, int>> SteinerGraph::dijkstras_steiner(NodeId r0, bool lower_bound);
+      const TerminalSubset &terminal_subset,
+      const TerminalId r0);
+
+  static int terminal_subset_size(const TerminalSubset &terminal_subset);
 };
