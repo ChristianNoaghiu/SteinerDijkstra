@@ -41,13 +41,14 @@ double SteinerGraph::get_or_compute_one_tree_bound(
         return _computed_one_tree_bounds[bound_key];
     }
 
-    // compute the metric closure and subgraph MST on it
-    const MetricClosureStruct metric_closure_result = metric_closure();
-    const std::vector<std::vector<int>> &distance_matrix = metric_closure_result.distance_matrix;
-    check_connected_metric_closure(distance_matrix);
+    compute_distances_and_check_connected();
 
-    /** @todo do this dynamically */
-    const SteinerGraph metric_closure_graph_result = metric_closure_graph(distance_matrix);
+    /** @todo move this to separate algorithm class
+     * there, we could also store the metric_closure_graph
+     * (which is not possible here since SteinerGraph cannot have
+     * a SteinerGraph as an attribute)
+     */
+    const SteinerGraph metric_closure_graph_result = metric_closure_graph(_distance_matrix);
     const SteinerGraph mst_graph = metric_closure_graph_result.subgraph_mst(is_in_terminal_subset(terminal_subset));
     double mst_value = mst_graph.edge_weight_sum();
 
@@ -81,8 +82,8 @@ double SteinerGraph::get_or_compute_one_tree_bound(
 
             // compute sum of distances as in definition
             /** @todo do this dynamically */
-            int distance_node_i = distance_matrix.at(node).at(node_i);
-            int distance_node_j = distance_matrix.at(node).at(node_j);
+            int distance_node_i = get_or_compute_distance(node, node_i);
+            int distance_node_j = get_or_compute_distance(node, node_j);
 
             if (distance_node_j > std::numeric_limits<int>::max() - distance_node_i)
             {
@@ -109,6 +110,8 @@ void SteinerGraph::test_one_tree_bound()
 {
     /*double x1 = get_or_compute_one_tree_bound(0, 0b111, 0);
     double x2 = get_or_compute_one_tree_bound(0, 0b111, 0);*/
+    std::cout << get_or_compute_distance(0, 1) << "\n";
+    std::cout << get_or_compute_distance(2, 3) << "\n";
     std::cout << get_or_compute_one_tree_bound(0, 0b011, 0) << "\n";
     std::cout << get_or_compute_one_tree_bound(1, 0b011, 0) << "\n";
     std::cout << get_or_compute_one_tree_bound(2, 0b011, 0) << "\n";

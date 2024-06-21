@@ -132,6 +132,11 @@ private:
   const std::function<bool(const SteinerGraph::NodeId)> is_in_set(const std::unordered_set<SteinerGraph::NodeId> &node_set) const;
   const std::function<bool(const SteinerGraph::NodeId)> is_in_terminal_subset(const TerminalSubset &terminal_subset) const;
 
+  std::vector<std::vector<int>> _distance_matrix;
+  bool _computed_distance_matrix = false;
+  void compute_distances_and_check_connected();
+  int get_or_compute_distance(const NodeId node1, const NodeId node2);
+
   /** @todo outsource this to separate algorithm class */
   struct PairHash
   {

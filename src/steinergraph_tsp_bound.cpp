@@ -109,11 +109,6 @@ void SteinerGraph::compute_hamiltonian_paths()
     // even though some keys have already been computed
     is_hamiltonian_path_computed = true;
 
-    // compute the distance matrix
-    const MetricClosureStruct metric_closure_result = metric_closure();
-    const std::vector<std::vector<int>> &distance_matrix = metric_closure_result.distance_matrix;
-    check_connected_metric_closure(distance_matrix);
-
     // initialize start values
     for (TerminalId i = 0; i < num_terminals(); i++)
     {
@@ -175,7 +170,7 @@ void SteinerGraph::compute_hamiltonian_paths()
                         // compare and set the new value of the key
                         HamiltonianPathKey key_without_j = std::make_tuple(i, x, terminal_subset_without_j);
                         double hamiltonian_path_without_j = get_hamiltonian_path(key_without_j);
-                        double distance_x_j = distance_matrix[node_x][node_j];
+                        double distance_x_j = get_or_compute_distance(node_x, node_j);
                         // prevent overflow
                         if (hamiltonian_path_without_j >= std::numeric_limits<double>::max() - distance_x_j)
                         {
@@ -200,5 +195,5 @@ void SteinerGraph::test_tsp_bound()
     compute_hamiltonian_paths();
     std::cout << get_hamiltonian_path(std::make_tuple(0, 0, 0b001)) << "\n";
     std::cout << get_hamiltonian_path(std::make_tuple(0, 1, 0b011)) << "\n";
-    std::cout << get_or_compute_tsp_bound(0, 0b011) << "\n";
+    std::cout << get_or_compute_tsp_bound(2, 0b011) << "\n";
 }
