@@ -130,11 +130,6 @@ private:
   const std::function<bool(const SteinerGraph::NodeId)> is_in_set(const std::set<SteinerGraph::NodeId> &node_set) const;
   const std::function<bool(const SteinerGraph::NodeId)> is_in_terminal_subset(const TerminalSubset &terminal_subset) const;
 
-  double tsp_bound(
-      const NodeId node,
-      const std::set<NodeId> &node_set)
-      const;
-
   /** @todo outsource this to separate algorithm class */
   struct PairHash
   {
