@@ -6,6 +6,7 @@
 #include <set>
 #include <bitset>
 #include <unordered_map>
+#include <unordered_set>
 
 class SteinerGraph
 {
@@ -116,7 +117,7 @@ private:
 
   std::vector<Node> _nodes;
   /** @todo replace this */
-  std::set<NodeId> _terminals;
+  std::unordered_set<NodeId> _terminals;
   std::vector<NodeId> _terminals_vector;
 
   // for queues in Dijkstra's and Prim's algorithms

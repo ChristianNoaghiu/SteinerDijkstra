@@ -40,7 +40,7 @@ const std::function<bool(const SteinerGraph::NodeId)> SteinerGraph::is_in_graph(
  * lambda returning whether a node is contained in node_set
  * (for induced subgraph)
  */
-const std::function<bool(const SteinerGraph::NodeId)> SteinerGraph::is_in_set(const std::set<SteinerGraph::NodeId> &node_set) const
+const std::function<bool(const SteinerGraph::NodeId)> SteinerGraph::is_in_set(const std::unordered_set<SteinerGraph::NodeId> &node_set) const
 {
     return [node_set = node_set](const SteinerGraph::NodeId node)
     {
