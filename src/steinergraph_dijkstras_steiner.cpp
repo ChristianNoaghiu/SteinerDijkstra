@@ -4,20 +4,42 @@
 #include <bitset>
 #include <vector>
 
+struct l_pair // struct für die Elemente aus dem Definitionsbereich der label-Abbildung
+{
+    SteinerGraph::NodeId v;
+    std::bitset<64> I;
+};
+
+// Hash und KeyEqual für die unordered_map labels
+struct l_pair_hash
+{ // Hashfunktion für die Paare (v, I) aus dem Definitionsbereich der label-Abbildung
+    std::size_t operator()(const l_pair &key) const
+    {
+        return (std::hash<SteinerGraph::NodeId>()(key.v) ^ std::hash<std::bitset<64>>()(key.I)); // XOR für Unterscheidung von (v, I) und (w, I) mit v != w
+    }
+};
+
+struct l_pair_equal
+{ // Operator der Gleichheit zweier Elemente der Form (v, I) prüft
+    bool operator()(const l_pair &first_elem, const l_pair &second_elem) const
+    {
+        return (first_elem.v == first_elem.v && second_elem.I == second_elem.I);
+    }
+};
+
 std::vector<std::pair<int, int>> SteinerGraph::dijkstras_steiner(NodeId r0, bool lower_bound)
 {
 
     // check if r0 is a terminal
 
-    using l_pair = std::pair<NodeId, std::bitset<64>>;
-    std::unordered_map<l_pair, double, std::hash<std::bitset<64>>> labels;
+    std::unordered_map<l_pair, double> labels;
 
     for (NodeId terminal : _terminals)
     {
         if (terminal == r0)
             continue;
     }
-    labels[l_pair(terminal, std::bitset<64>(1 << terminal))];
+    // labels[l_pair(terminal, std::bitset<64>(1 << terminal))] = 0; Ich habe nicht herausgefunden, wie man jetzt Elemente hinzufügt...
 }
 
 // Actual Code bei dem was passiert
