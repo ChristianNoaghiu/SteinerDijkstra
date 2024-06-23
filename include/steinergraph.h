@@ -161,7 +161,10 @@ private:
 
   using BoundKey = std::pair<NodeId, TerminalSubset>;
   using BoundKeyToDoubleMap = std::unordered_map<BoundKey, double, PairHash>;
-
+  
+  std::vector<std::pair<int, int>> SteinerGraph::dijkstra_steiner(NodeId r0, bool lower_bound);
+  double bound(bool lower_bound, std::bitset<64> R_without_I) const;
+  
   std::optional<TerminalId> _computed_one_tree_bound_root_terminal;
   BoundKeyToDoubleMap _computed_one_tree_bounds;
   double get_or_compute_one_tree_bound(
@@ -183,4 +186,5 @@ private:
 
   static int terminal_subset_size(const TerminalSubset &terminal_subset);
   TerminalSubset one_element_terminal_subset(const TerminalId terminal_id) const;
+
 };
