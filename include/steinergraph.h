@@ -161,6 +161,7 @@ private:
 
   using BoundKey = std::pair<NodeId, TerminalSubset>;
   using BoundKeyToDoubleMap = std::unordered_map<BoundKey, double, PairHash>;
+  using BoundKeyToBoundKeyVectorMap = std::unordered_map<BoundKey, std::vector<BoundKey>, PairHash>;
   using BoundKeySet = std::unordered_set<BoundKey, PairHash>;
 
   std::vector<std::pair<int, int>> dijkstra_steiner(const NodeId r0, const bool lower_bound);

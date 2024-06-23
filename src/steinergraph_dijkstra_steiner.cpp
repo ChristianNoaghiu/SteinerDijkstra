@@ -35,7 +35,7 @@ std::vector<std::pair<int, int>> SteinerGraph::dijkstra_steiner(const NodeId r0,
     // labels definition
     BoundKeyToDoubleMap labels;
     // backtrack definition
-    std::unordered_map<BoundKey, std::vector<BoundKey>> backtrack; // tuple von pairs, da mehrere label-pairs zu einem (v, I) gehören können
+    BoundKeyToBoundKeyVectorMap backtrack; // tuple von pairs, da mehrere label-pairs zu einem (v, I) gehören können
     // non_permanent_labels definition (N)
     std::priority_queue<std::pair<double, BoundKey>, std::vector<std::pair<double, std::pair<SteinerGraph::NodeId, std::bitset<64>>>>, std::greater<std::pair<double, BoundKey>>> non_permanent_labels;
     // permanent_labels definition (P)
