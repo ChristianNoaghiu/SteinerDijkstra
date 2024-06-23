@@ -123,5 +123,6 @@ private:
       const std::unordered_set<NodeId> &node_set,
       const NodeId r0)
       const;
-  // std::vector<std::pair<int, int>> SteinerGraph::dijkstras_steiner(NodeId r0, bool lower_bound);
+  std::vector<std::pair<int, int>> SteinerGraph::dijkstra_steiner(NodeId r0, bool lower_bound);
+  double bound(bool lower_bound, std::bitset<64> R_without_I) const;
 };
