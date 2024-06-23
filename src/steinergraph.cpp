@@ -18,6 +18,12 @@ void SteinerGraph::make_terminal(const NodeId new_terminal)
    }
    _nodes[new_terminal].set_terminal();
    _terminals.insert(new_terminal);
+
+   // insert new_terminal into _terminal_vector if not already present
+   if (std::find(_terminals_vector.begin(), _terminals_vector.end(), new_terminal) == _terminals_vector.end())
+   {
+      _terminals_vector.push_back(new_terminal);
+   }
 }
 
 void SteinerGraph::set_predecessor(const NodeId node_id, const std::optional<NodeId> predecessor)
@@ -94,6 +100,11 @@ const std::vector<SteinerGraph::Neighbor> &SteinerGraph::Node::adjacent_nodes() 
 SteinerGraph::NodeId SteinerGraph::num_nodes() const
 {
    return _nodes.size();
+}
+
+SteinerGraph::NodeId SteinerGraph::num_terminals() const
+{
+   return _terminals_vector.size();
 }
 
 const SteinerGraph::Node &SteinerGraph::get_node(const NodeId node) const
@@ -181,5 +192,17 @@ void SteinerGraph::check_valid_node(const NodeId node) const
    if (node < 0 || node >= num_nodes())
    {
       throw std::runtime_error("Invalid NodeId.");
+   }
+}
+
+void SteinerGraph::check_valid_terminal(const TerminalId terminal) const
+{
+   if (terminal < 0 || terminal >= num_terminals())
+   {
+      throw std::runtime_error("Invalid TerminalId.");
+   }
+   if (terminal >= 64)
+   {
+      throw std::runtime_error("TerminalId exceeds the size of TerminalSubset.");
    }
 }
