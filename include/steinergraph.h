@@ -164,7 +164,8 @@ private:
   using BoundKeyToBoundKeyVectorMap = std::unordered_map<BoundKey, std::vector<BoundKey>, PairHash>;
   using BoundKeySet = std::unordered_set<BoundKey, PairHash>;
 
-  std::vector<std::pair<int, int>> dijkstra_steiner(const NodeId r0, const bool lower_bound);
+  std::vector<std::pair<NodeId, NodeId>> dijkstra_steiner(const NodeId r0, const bool lower_bound);
+  std::vector<std::pair<NodeId, NodeId>> backtrack(const BoundKeyToBoundKeyVectorMap &backtrack, const BoundKey &current_label) const;
   double bound(const bool lower_bound, const NodeId node, const TerminalSubset &R_without_I);
 
   std::optional<TerminalId> _computed_one_tree_bound_root_terminal;

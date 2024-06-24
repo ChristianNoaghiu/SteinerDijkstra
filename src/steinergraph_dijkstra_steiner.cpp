@@ -31,7 +31,7 @@ namespace
     };
 }
 
-std::vector<std::pair<int, int>> SteinerGraph::dijkstra_steiner(const NodeId r0, const bool lower_bound)
+std::vector<std::pair<SteinerGraph::NodeId, SteinerGraph::NodeId>> SteinerGraph::dijkstra_steiner(const NodeId r0, const bool lower_bound)
 {
 
     // check if r0 is a terminal
@@ -43,7 +43,7 @@ std::vector<std::pair<int, int>> SteinerGraph::dijkstra_steiner(const NodeId r0,
     // labels definition
     BoundKeyToDoubleMap labels;
     // backtrack definition
-    BoundKeyToBoundKeyVectorMap backtrack; // tuple von pairs, da mehrere label-pairs zu einem (v, I) gehören können
+    BoundKeyToBoundKeyVectorMap _backtrack; // tuple von pairs, da mehrere label-pairs zu einem (v, I) gehören können
     // non_permanent_labels definition (N)
     std::priority_queue<std::pair<double, BoundKey>, std::vector<std::pair<double, BoundKey>>, Compare> non_permanent_labels;
     // permanent_labels definition (P)
@@ -76,7 +76,7 @@ std::vector<std::pair<int, int>> SteinerGraph::dijkstra_steiner(const NodeId r0,
                 if (not labels.count(neighbour_label) || current_label_value + edge_weight < labels[neighbour_label]) // Der erste Fall ist, falls der Nachbar noch keine Distanz bekommen hat, also unendlich weit weg ist, falls dies der Fall ist, ist das Statement true und wir kommen sofort in den if-bracket
                 {
                     labels[neighbour_label] = current_label_value + edge_weight;
-                    backtrack[neighbour_label] = {current_label};
+                    _backtrack[neighbour_label] = {current_label};
                     TerminalSubset bound_input_1 = helper_variable ^ current_label.second;
                     bound_input_1.set(r0);
                     non_permanent_labels.push(std::make_pair((current_label_value + edge_weight + bound(lower_bound, current_node, bound_input_1)), neighbour_label)); // Alle Elemente aus non_permanent_labels haben die Distanz !inklusive lower_bound-Wert! als Vergleichswert
@@ -97,7 +97,7 @@ std::vector<std::pair<int, int>> SteinerGraph::dijkstra_steiner(const NodeId r0,
                     if (not labels.count(union_label) || current_label_value + labels[v_J_label] < labels[union_label]) // Fall das (v, J u I) noch keine Distanz bekommen hat sind wir schon im true-Fall und wir kommen aufgrund des ||'s in das if-bracket, wo es auf einen Wert gesetzt wird
                     {
                         labels[union_label] = current_label_value + labels[v_J_label];
-                        backtrack[union_label] = {current_label, v_J_label};
+                        _backtrack[union_label] = {current_label, v_J_label};
                         TerminalSubset bound_input_2 = helper_variable ^ union_label.second;
                         bound_input_2.set(r0);
                         non_permanent_labels.push(std::make_pair(current_label_value + labels[v_J_label] + bound(lower_bound, current_node, bound_input_2), union_label));
@@ -106,5 +106,32 @@ std::vector<std::pair<int, int>> SteinerGraph::dijkstra_steiner(const NodeId r0,
             }
         }
     }
-    return {}; // hier fehlt noch backtrack von (r0, R\r0) zurückgeben und der Code dazu
+    return backtrack(_backtrack, final_permanent_label); // hier fehlt noch backtrack von (r0, R\r0) zurückzugeben und der Code dazu
+}
+
+std::vector<std::pair<SteinerGraph::NodeId, SteinerGraph::NodeId>> SteinerGraph::backtrack(const BoundKeyToBoundKeyVectorMap &_backtrack, const BoundKey &current_label) const
+{
+    std::vector<std::pair<NodeId, NodeId>> result;
+    if (_backtrack.count(current_label) == 0)
+    {
+        return result;
+    }
+    std::vector<std::pair<NodeId, TerminalSubset>> predecessors = _backtrack.at(current_label);
+    if (predecessors.size() == 1)
+    {
+        result.push_back(std::make_pair(predecessors.at(0).first, current_label.first));
+        std::vector<std::pair<NodeId, NodeId>> temp = backtrack(_backtrack, std::make_pair(predecessors.at(0).first, current_label.second));
+        result.insert(result.end(), temp.begin(), temp.end());
+        return result;
+    }
+    else
+    {
+        for (const BoundKey &predecessor_label : predecessors)
+        {
+            std::vector<std::pair<NodeId, NodeId>> temp = backtrack(_backtrack, predecessor_label);
+            result.insert(result.end(), temp.begin(), temp.end());
+            return result;
+        }
+        return result;
+    }
 }
