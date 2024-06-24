@@ -19,4 +19,4 @@ include_directories(external)
 file(GLOB SRC_FILES
 ${PROJECT_SOURCE_DIR}/src/*.cpp)
 
-add_executable(Steinertree main/testgraph.cpp ${SRC_FILES})
+add_executable(Steinertree.exe main/testgraph.cpp ${SRC_FILES})

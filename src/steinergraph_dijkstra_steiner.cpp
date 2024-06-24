@@ -35,7 +35,7 @@ std::vector<std::pair<SteinerGraph::NodeId, SteinerGraph::NodeId>> SteinerGraph:
 {
 
     // check if r0 is a terminal
-    if (_terminals.find(r0) == _terminals.end())
+    if (!get_node(r0).is_terminal())
     {
         throw std::invalid_argument("r0 is not a terminal");
     }
@@ -48,7 +48,7 @@ std::vector<std::pair<SteinerGraph::NodeId, SteinerGraph::NodeId>> SteinerGraph:
     std::priority_queue<std::pair<double, BoundKey>, std::vector<std::pair<double, BoundKey>>, Compare> non_permanent_labels;
     // permanent_labels definition (P)
     BoundKeySet permanent_labels;
-    for (NodeId terminal : _terminals)
+    for (const NodeId &terminal : _terminals_vector)
     {
         if (terminal == r0)
         {
@@ -119,9 +119,9 @@ std::vector<std::pair<SteinerGraph::NodeId, SteinerGraph::NodeId>> SteinerGraph:
     std::vector<std::pair<NodeId, TerminalSubset>> predecessors = _backtrack.at(current_label);
     if (predecessors.size() == 1)
     {
-        result.push_back(std::make_pair(predecessors.at(0).first, current_label.first));
         std::vector<std::pair<NodeId, NodeId>> temp = backtrack(_backtrack, std::make_pair(predecessors.at(0).first, current_label.second));
         result.insert(result.end(), temp.begin(), temp.end());
+        result.push_back(std::make_pair(predecessors.at(0).first, current_label.first));
         return result;
     }
     else

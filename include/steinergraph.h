@@ -99,6 +99,8 @@ public:
   void test_one_tree_bound();
   void test_tsp_bound();
 
+  std::vector<std::pair<NodeId, NodeId>> dijkstra_steiner(const NodeId r0, const bool lower_bound);
+
 private:
   void check_valid_node(const NodeId node) const;
   void check_valid_terminal(const TerminalId node) const;
@@ -164,7 +166,7 @@ private:
   using BoundKeyToBoundKeyVectorMap = std::unordered_map<BoundKey, std::vector<BoundKey>, PairHash>;
   using BoundKeySet = std::unordered_set<BoundKey, PairHash>;
 
-  std::vector<std::pair<NodeId, NodeId>> dijkstra_steiner(const NodeId r0, const bool lower_bound);
+  // dijkstra steiner in den public-part verschoben
   std::vector<std::pair<NodeId, NodeId>> backtrack(const BoundKeyToBoundKeyVectorMap &backtrack, const BoundKey &current_label) const;
   double bound(const bool lower_bound, const NodeId node, const TerminalSubset &R_without_I);
 
