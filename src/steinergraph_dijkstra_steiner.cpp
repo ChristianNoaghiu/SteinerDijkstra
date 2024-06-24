@@ -21,6 +21,14 @@ namespace
         output.reset(i);
         return output;
     }
+    struct Compare
+    {
+        bool operator()(const std::pair<double, std::pair<int, std::bitset<64>>> &a,
+                        const std::pair<double, std::pair<int, std::bitset<64>>> &b) const
+        {
+            return a.first > b.first; // Vergleicht nur den double-Wert, also die Distanz
+        }
+    };
 }
 
 std::vector<std::pair<int, int>> SteinerGraph::dijkstra_steiner(const NodeId r0, const bool lower_bound)
@@ -37,7 +45,7 @@ std::vector<std::pair<int, int>> SteinerGraph::dijkstra_steiner(const NodeId r0,
     // backtrack definition
     BoundKeyToBoundKeyVectorMap backtrack; // tuple von pairs, da mehrere label-pairs zu einem (v, I) gehören können
     // non_permanent_labels definition (N)
-    std::priority_queue<std::pair<double, BoundKey>, std::vector<std::pair<double, std::pair<SteinerGraph::NodeId, std::bitset<64>>>>, std::greater<std::pair<double, BoundKey>>> non_permanent_labels;
+    std::priority_queue<std::pair<double, BoundKey>, std::vector<std::pair<double, BoundKey>>, Compare> non_permanent_labels;
     // permanent_labels definition (P)
     BoundKeySet permanent_labels;
     for (NodeId terminal : _terminals)
