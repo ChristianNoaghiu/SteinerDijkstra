@@ -35,7 +35,7 @@ double SteinerGraph::get_or_compute_one_tree_bound(
     }
 
     // check if the bound has already been computed and return it
-    const BoundKey bound_key = std::make_pair(node, terminal_subset);
+    const LabelKey bound_key = std::make_pair(node, terminal_subset);
     if (_computed_one_tree_bounds.count(bound_key) > 0)
     {
         return _computed_one_tree_bounds[bound_key];

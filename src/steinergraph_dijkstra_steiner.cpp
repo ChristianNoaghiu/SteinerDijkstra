@@ -21,15 +21,15 @@ namespace
         output.reset(i);
         return output;
     }
-    struct Compare
-    {
-        bool operator()(const std::pair<double, std::pair<int, std::bitset<64>>> &a,
-                        const std::pair<double, std::pair<int, std::bitset<64>>> &b) const
-        {
-            return a.first > b.first; // Vergleicht nur den double-Wert, also die Distanz
-        }
-    };
 }
+struct SteinerGraph::CompareWeightedLabelKey
+{
+    bool operator()(const WeightedLabelKey &a,
+                    const WeightedLabelKey &b) const
+    {
+        return a.first > b.first; // Vergleicht nur den double-Wert, also die Distanz
+    }
+};
 
 SteinerGraph SteinerGraph::dijkstra_steiner(const NodeId r0, const bool lower_bound)
 {
@@ -41,45 +41,46 @@ SteinerGraph SteinerGraph::dijkstra_steiner(const NodeId r0, const bool lower_bo
     }
     TerminalSubset helper_variable = 0;
     // labels definition
-    BoundKeyToDoubleMap labels;
+    LabelKeyToDoubleMap labels;
     // backtrack definition
-    BoundKeyToBoundKeyVectorMap _backtrack; // tuple von pairs, da mehrere label-pairs zu einem (v, I) gehören können
+    LabelKeyToWeightedLabelKeyVectorMap backtrack_data; // vector von pairs, da mehrere label-pairs zu einem (v, I) gehören können
     // non_permanent_labels definition (N)
-    std::priority_queue<std::pair<double, BoundKey>, std::vector<std::pair<double, BoundKey>>, Compare> non_permanent_labels;
+    std::priority_queue<WeightedLabelKey, std::vector<WeightedLabelKey>, CompareWeightedLabelKey> non_permanent_labels;
     // permanent_labels definition (P)
-    BoundKeySet permanent_labels;
+    LabelKeySet permanent_labels;
     for (const NodeId &terminal : _terminals_vector)
     {
         if (terminal == r0)
         {
             continue;
         }
-        labels[std::make_pair(terminal, TerminalSubset(1 << terminal))] = 0;
-        non_permanent_labels.push(std::make_pair(0, std::make_pair(terminal, TerminalSubset(1 << terminal))));
+        LabelKey terminal_label = std::make_pair(terminal, TerminalSubset(1 << terminal));
+        labels[terminal_label] = 0;
+        non_permanent_labels.push(std::make_pair(0, terminal_label));
         helper_variable.set(terminal);
     }
-    const BoundKey final_permanent_label = make_pair(r0, helper_variable);
+    const LabelKey final_permanent_label = make_pair(r0, helper_variable);
     while (not permanent_labels.count(final_permanent_label))
     {
-        BoundKey current_label = non_permanent_labels.top().second; // (v, I) des priority-queue-Elements (geordnet nach niedrigster Distanz)
+        LabelKey current_label = non_permanent_labels.top().second; // (v, I) des priority-queue-Elements (geordnet nach niedrigster Distanz)
         non_permanent_labels.pop();
         permanent_labels.insert(current_label);
         double current_label_value = labels[current_label];
         NodeId current_node = current_label.first;
-        for (const auto &edge_node : get_node(current_node).adjacent_nodes()) // Iterieren über die von v ausgehenden Kanten
+        for (const Neighbor &neighbor : get_node(current_node).adjacent_nodes()) // Iterieren über die von v ausgehenden Kanten
         {
-            NodeId neighbour = edge_node.id();                                          // zweiter Knoten der betrachteten Kante
-            double edge_weight = edge_node.edge_weight();                               // Kantengewicht
-            BoundKey neighbour_label = std::make_pair(neighbour, current_label.second); // (w, I) für den Kantennachbarn
-            if (not permanent_labels.count(neighbour_label))
+            NodeId neighbor_id = neighbor.id();                                          // zweiter Knoten der betrachteten Kante
+            double edge_weight = neighbor.edge_weight();                                 // Kantengewicht
+            LabelKey neighbor_label = std::make_pair(neighbor_id, current_label.second); // (w, I) für den Kantennachbarn
+            if (not permanent_labels.count(neighbor_label))
             {
-                if (not labels.count(neighbour_label) || current_label_value + edge_weight < labels[neighbour_label]) // Der erste Fall ist, falls der Nachbar noch keine Distanz bekommen hat, also unendlich weit weg ist, falls dies der Fall ist, ist das Statement true und wir kommen sofort in den if-bracket
+                if (not labels.count(neighbor_label) || current_label_value + edge_weight < labels[neighbor_label]) // Der erste Fall ist, falls der Nachbar noch keine Distanz bekommen hat, also unendlich weit weg ist, falls dies der Fall ist, ist das Statement true und wir kommen sofort in den if-bracket
                 {
-                    labels[neighbour_label] = current_label_value + edge_weight;
-                    _backtrack[neighbour_label] = {current_label};
+                    labels[neighbor_label] = current_label_value + edge_weight;
+                    backtrack_data[neighbor_label] = {std::make_pair(edge_weight, current_label)};
                     TerminalSubset bound_input_1 = helper_variable ^ current_label.second;
                     bound_input_1.set(r0);
-                    non_permanent_labels.push(std::make_pair((current_label_value + edge_weight + bound(lower_bound, current_node, bound_input_1)), neighbour_label)); // Alle Elemente aus non_permanent_labels haben die Distanz !inklusive lower_bound-Wert! als Vergleichswert
+                    non_permanent_labels.push(std::make_pair((current_label_value + edge_weight + bound(lower_bound, current_node, bound_input_1)), neighbor_label)); // Alle Elemente aus non_permanent_labels haben die Distanz !inklusive lower_bound-Wert! als Vergleichswert
                 }
             }
         }
@@ -87,17 +88,17 @@ SteinerGraph SteinerGraph::dijkstra_steiner(const NodeId r0, const bool lower_bo
         TerminalSubset R_r0_without_I = helper_variable ^ current_label.second;
         for (TerminalSubset J = R_r0_without_I; J.any(); J = minus_one(J) & R_r0_without_I) // Iterieren über alle nicht-leeren Teilmengen J von (R \ {r_0}) \ I
         {
-            BoundKey v_J_label = std::make_pair(current_label.first, J);
+            LabelKey v_J_label = std::make_pair(current_label.first, J);
             if (permanent_labels.count(v_J_label)) // prüft ob (v, J) \elem P
             {
-                BoundKey union_label = std::make_pair(current_label.first, J | current_label.second);
+                LabelKey union_label = std::make_pair(current_label.first, J | current_label.second);
                 if (not permanent_labels.count(union_label)) // prüft ob (v, J u I) \notelem P
                 {
                     //  müssen prüfen ob label(v, I) + label(v, J) < label(v, I u J) ------- ist schon klar, das v, I und v, J in labels sind? Yes, (v, I) weil es in N gelandet ist und (v, J) weil es in P gelandet ist
                     if (not labels.count(union_label) || current_label_value + labels[v_J_label] < labels[union_label]) // Fall das (v, J u I) noch keine Distanz bekommen hat sind wir schon im true-Fall und wir kommen aufgrund des ||'s in das if-bracket, wo es auf einen Wert gesetzt wird
                     {
                         labels[union_label] = current_label_value + labels[v_J_label];
-                        _backtrack[union_label] = {current_label, v_J_label};
+                        backtrack_data[union_label] = {std::make_pair(infinite_distance, current_label), std::make_pair(infinite_distance, v_J_label)};
                         TerminalSubset bound_input_2 = helper_variable ^ union_label.second;
                         bound_input_2.set(r0);
                         non_permanent_labels.push(std::make_pair(current_label_value + labels[v_J_label] + bound(lower_bound, current_node, bound_input_2), union_label));
@@ -106,35 +107,39 @@ SteinerGraph SteinerGraph::dijkstra_steiner(const NodeId r0, const bool lower_bo
             }
         }
     }
-    std::vector<std::pair<SteinerGraph::NodeId, SteinerGraph::NodeId>> edge_vector = backtrack(_backtrack, final_permanent_label);
+    std::vector<EdgeTuple> edge_vector = backtrack(backtrack_data, final_permanent_label);
     SteinerGraph result_graph = clear_edges();
-    for (std::pair<NodeId, NodeId> &edge : edge_vector)
+    for (EdgeTuple &edge : edge_vector)
     {
-        result_graph.add_edge(edge.first, edge.second, get_or_compute_distance(edge.first, edge.second)); /** @todo replace distance by real adjacency matrix */
+        result_graph.add_edge(std::get<0>(edge), std::get<1>(edge), std::get<2>(edge));
     }
     return result_graph;
 }
 
-std::vector<std::pair<SteinerGraph::NodeId, SteinerGraph::NodeId>> SteinerGraph::backtrack(const BoundKeyToBoundKeyVectorMap &_backtrack, const BoundKey &current_label) const
+std::vector<SteinerGraph::EdgeTuple> SteinerGraph::backtrack(
+    const LabelKeyToWeightedLabelKeyVectorMap &backtrack_data,
+    const LabelKey &current_label)
+    const
 {
-    std::vector<std::pair<NodeId, NodeId>> result;
-    if (_backtrack.count(current_label) == 0)
+    std::vector<EdgeTuple> result;
+    if (backtrack_data.count(current_label) == 0)
     {
         return result;
     }
-    std::vector<std::pair<NodeId, TerminalSubset>> predecessors = _backtrack.at(current_label);
+    const std::vector<WeightedLabelKey> predecessors = backtrack_data.at(current_label);
     if (predecessors.size() == 1)
     {
-        std::vector<std::pair<NodeId, NodeId>> temp = backtrack(_backtrack, std::make_pair(predecessors.at(0).first, current_label.second));
+        const std::vector<EdgeTuple> temp = backtrack(backtrack_data, std::make_pair(predecessors.at(0).second.first, current_label.second));
         result.insert(result.end(), temp.begin(), temp.end());
-        result.push_back(std::make_pair(predecessors.at(0).first, current_label.first));
+        const int edge_weight = predecessors.at(0).first;
+        result.push_back(std::make_tuple(predecessors.at(0).second.first, current_label.first, edge_weight));
         return result;
     }
     else
     {
-        for (const BoundKey &predecessor_label : predecessors)
+        for (const WeightedLabelKey &predecessor_label : predecessors)
         {
-            std::vector<std::pair<NodeId, NodeId>> temp = backtrack(_backtrack, predecessor_label);
+            const std::vector<EdgeTuple> temp = backtrack(backtrack_data, predecessor_label.second);
             result.insert(result.end(), temp.begin(), temp.end());
         }
         return result;

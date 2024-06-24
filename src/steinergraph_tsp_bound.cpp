@@ -15,7 +15,7 @@ double SteinerGraph::get_or_compute_tsp_bound(
     check_valid_node(node);
 
     // check if the bound has already been computed and return it
-    const BoundKey bound_key = std::make_pair(node, terminal_subset);
+    const LabelKey bound_key = std::make_pair(node, terminal_subset);
     if (!is_hamiltonian_path_computed)
     {
         compute_hamiltonian_paths();

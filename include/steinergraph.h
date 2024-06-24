@@ -162,17 +162,19 @@ private:
     }
   };
 
-  using BoundKey = std::pair<NodeId, TerminalSubset>;
-  using BoundKeyToDoubleMap = std::unordered_map<BoundKey, double, PairHash>;
-  using BoundKeyToBoundKeyVectorMap = std::unordered_map<BoundKey, std::vector<BoundKey>, PairHash>;
-  using BoundKeySet = std::unordered_set<BoundKey, PairHash>;
+  using LabelKey = std::pair<NodeId, TerminalSubset>;
+  using WeightedLabelKey = std::pair<double, LabelKey>;
+  using LabelKeyToDoubleMap = std::unordered_map<LabelKey, double, PairHash>;
+  using LabelKeyToWeightedLabelKeyVectorMap = std::unordered_map<LabelKey, std::vector<WeightedLabelKey>, PairHash>;
+  using LabelKeySet = std::unordered_set<LabelKey, PairHash>;
 
   // dijkstra steiner in den public-part verschoben
-  std::vector<std::pair<NodeId, NodeId>> backtrack(const BoundKeyToBoundKeyVectorMap &backtrack, const BoundKey &current_label) const;
+  std::vector<EdgeTuple> backtrack(const LabelKeyToWeightedLabelKeyVectorMap &backtrack, const LabelKey &current_label) const;
   double bound(const bool lower_bound, const NodeId node, const TerminalSubset &R_without_I);
+  struct CompareWeightedLabelKey;
 
   std::optional<TerminalId> _computed_one_tree_bound_root_terminal;
-  BoundKeyToDoubleMap _computed_one_tree_bounds;
+  LabelKeyToDoubleMap _computed_one_tree_bounds;
   double get_or_compute_one_tree_bound(
       const NodeId node,
       const TerminalSubset &terminal_subset,
@@ -185,7 +187,7 @@ private:
   double get_hamiltonian_path(const HamiltonianPathKey &key) const;
   bool is_hamiltonian_path_computed = false;
   void compute_hamiltonian_paths();
-  BoundKeyToDoubleMap _computed_tsp_bounds;
+  LabelKeyToDoubleMap _computed_tsp_bounds;
   double get_or_compute_tsp_bound(
       const NodeId node,
       const TerminalSubset &terminal_subset);
