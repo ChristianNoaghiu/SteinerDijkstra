@@ -9,15 +9,17 @@ int main(int argc, char *argv[])
     {
         std::cout << "Hi" << std::endl;
         SteinerGraph g(argv[1]);
-        std::vector<std::pair<SteinerGraph::NodeId, SteinerGraph::NodeId>> dijkstra_steiner_result = g.dijkstra_steiner(0, false);
+        SteinerGraph dijkstra_steiner_result = g.dijkstra_steiner(0, false);
 
-        std::cout << dijkstra_steiner_result.size() << std::endl;
+        dijkstra_steiner_result.print();
+
+        /*std::cout << dijkstra_steiner_result.size() << std::endl;
 
         for (auto &pair : dijkstra_steiner_result)
         {
-            std::cout << pair.first + 1 << " <-> " << pair.second + 1 /*<< ", weight: " << g.get_node(pair.first).adjacent_nodes().find(pair.second)*/ << std::endl;
+            std::cout << pair.first + 1 << " <-> " << pair.second + 1 << ", weight: " << g.get_node(pair.first).adjacent_nodes().find(pair.second) << std::endl;
         }
-        std::cout << "check" << std::endl;
+        std::cout << "check" << std::endl;*/
 
         /** @todo remove this */
         // g.test_one_tree_bound();

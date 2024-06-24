@@ -12,6 +12,7 @@ class SteinerGraph
 {
 public:
   using NodeId = int; // vertices are numbered 0,...,num_nodes()-1
+  using EdgeTuple = std::tuple<NodeId, NodeId, int>;
   using TerminalId = int;
   using TerminalSubset = std::bitset<64>;
 
@@ -99,7 +100,7 @@ public:
   void test_one_tree_bound();
   void test_tsp_bound();
 
-  std::vector<std::pair<NodeId, NodeId>> dijkstra_steiner(const NodeId r0, const bool lower_bound);
+  SteinerGraph dijkstra_steiner(const NodeId r0, const bool lower_bound);
 
 private:
   void check_valid_node(const NodeId node) const;

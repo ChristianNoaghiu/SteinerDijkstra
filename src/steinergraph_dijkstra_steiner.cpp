@@ -31,7 +31,7 @@ namespace
     };
 }
 
-std::vector<std::pair<SteinerGraph::NodeId, SteinerGraph::NodeId>> SteinerGraph::dijkstra_steiner(const NodeId r0, const bool lower_bound)
+SteinerGraph SteinerGraph::dijkstra_steiner(const NodeId r0, const bool lower_bound)
 {
 
     // check if r0 is a terminal
@@ -106,7 +106,13 @@ std::vector<std::pair<SteinerGraph::NodeId, SteinerGraph::NodeId>> SteinerGraph:
             }
         }
     }
-    return backtrack(_backtrack, final_permanent_label); // hier fehlt noch backtrack von (r0, R\r0) zurückzugeben und der Code dazu
+    std::vector<std::pair<SteinerGraph::NodeId, SteinerGraph::NodeId>> edge_vector = backtrack(_backtrack, final_permanent_label);
+    SteinerGraph result_graph = clear_edges();
+    for (std::pair<NodeId, NodeId> &edge : edge_vector)
+    {
+        result_graph.add_edge(edge.first, edge.second, get_or_compute_distance(edge.first, edge.second)); /** @todo replace distance by real adjacency matrix */
+    }
+    return result_graph;
 }
 
 std::vector<std::pair<SteinerGraph::NodeId, SteinerGraph::NodeId>> SteinerGraph::backtrack(const BoundKeyToBoundKeyVectorMap &_backtrack, const BoundKey &current_label) const
@@ -130,7 +136,6 @@ std::vector<std::pair<SteinerGraph::NodeId, SteinerGraph::NodeId>> SteinerGraph:
         {
             std::vector<std::pair<NodeId, NodeId>> temp = backtrack(_backtrack, predecessor_label);
             result.insert(result.end(), temp.begin(), temp.end());
-            return result;
         }
         return result;
     }
