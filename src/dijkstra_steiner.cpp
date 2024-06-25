@@ -113,7 +113,7 @@ SteinerGraph DijkstraSteiner::compute_optimal_steiner_tree(const SteinerGraph::N
     return result_graph;
 }
 
-std::vector<DijktraSteiner::EdgeTuple> DijkstraSteiner::backtrack(
+std::vector<DijkstraSteiner::EdgeTuple> DijkstraSteiner::backtrack(
     const LabelKeyToWeightedLabelKeyVectorMap &backtrack_data,
     const LabelKey &current_label)
     const

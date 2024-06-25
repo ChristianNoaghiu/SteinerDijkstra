@@ -13,8 +13,14 @@
 class DijkstraSteiner
 {
 public:
-    SteinerGraph _graph;
     DijkstraSteiner(const SteinerGraph &graph);
+    SteinerGraph compute_optimal_steiner_tree(const SteinerGraph::NodeId r0, const bool lower_bound);
+
+    /** @todo make private */
+    using TerminalSubset = std::bitset<64>;
+
+private:
+    SteinerGraph _graph;
 
     // for dynamic distance computations
     std::vector<std::vector<int>> _distance_matrix;
@@ -27,7 +33,6 @@ public:
     struct TripleHash;
     struct CompareWeightedLabelKey;
 
-    using TerminalSubset = std::bitset<64>;
     const std::function<bool(const SteinerGraph::NodeId)> is_in_terminal_subset(const TerminalSubset &terminal_subset) const;
     TerminalSubset one_element_terminal_subset(const SteinerGraph::TerminalId terminal_id) const;
     bool is_terminal_subset_of(
@@ -87,7 +92,6 @@ public:
     double bound(const bool lower_bound, const SteinerGraph::NodeId node, const TerminalSubset &R_without_I);
 
     // Dijkstra-Steiner algorithm
-    SteinerGraph compute_optimal_steiner_tree(const SteinerGraph::NodeId r0, const bool lower_bound);
     std::vector<EdgeTuple> backtrack(const LabelKeyToWeightedLabelKeyVectorMap &backtrack, const LabelKey &current_label) const;
 
     /** @todo remove this */

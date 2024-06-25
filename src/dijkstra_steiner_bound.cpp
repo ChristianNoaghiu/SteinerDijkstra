@@ -1,5 +1,5 @@
 #include "steinergraph.h"
-#include "dijkstra_steiner.cpp"
+#include "dijkstra_steiner.h"
 #include <bitset>
 
 double DijkstraSteiner::bound(const bool lower_bound, const SteinerGraph::NodeId node, const DijkstraSteiner::TerminalSubset &R_without_I)

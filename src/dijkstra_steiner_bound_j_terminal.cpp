@@ -34,9 +34,9 @@ double DijkstraSteiner::get_or_compute_j_terminal_bound(
 
     // check if the bound has already been computed and return it
     const LabelKey label_key = std::make_pair(node, terminal_subset);
-    if (_computed_one_tree_bounds.count(label_key) > 0)
+    if (_computed_j_terminal_bounds.count(label_key) > 0)
     {
-        return _computed_one_tree_bounds[label_key];
+        return _computed_j_terminal_bounds[label_key];
     }
 
     /** @todo outsource this to avoid duplicate code */
@@ -78,5 +78,6 @@ double DijkstraSteiner::get_or_compute_j_terminal_bound(
         }
     }
 
+    _computed_j_terminal_bounds[label_key] = result;
     return result;
 }
