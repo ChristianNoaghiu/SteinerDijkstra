@@ -38,6 +38,21 @@ const std::function<bool(const SteinerGraph::NodeId)> DijkstraSteiner::is_in_ter
 }
 
 /**
+ * returns whether subset is a subset of superset
+ */
+bool DijkstraSteiner::is_terminal_subset_of(const SteinerGraph::TerminalSubset &subset, const SteinerGraph::TerminalSubset &superset) const
+{
+    for (SteinerGraph::TerminalId i = 0; i < _graph.num_terminals(); i++)
+    {
+        if (subset[i] && !superset[i])
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
  * hash function for a map of pairs
  */
 struct DijkstraSteiner::PairHash

@@ -37,10 +37,10 @@ double DijkstraSteiner::get_or_compute_one_tree_bound(
     }
 
     // check if the bound has already been computed and return it
-    const LabelKey bound_key = std::make_pair(node, terminal_subset);
-    if (_computed_one_tree_bounds.count(bound_key) > 0)
+    const LabelKey label_key = std::make_pair(node, terminal_subset);
+    if (_computed_one_tree_bounds.count(label_key) > 0)
     {
-        return _computed_one_tree_bounds[bound_key];
+        return _computed_one_tree_bounds[label_key];
     }
 
     compute_distances_and_check_connected();
@@ -103,7 +103,7 @@ double DijkstraSteiner::get_or_compute_one_tree_bound(
 
     // store the result dynamically
     double result = (static_cast<double>(distance_sum) / 2) + (static_cast<double>(mst_value) / 2);
-    _computed_one_tree_bounds[bound_key] = result;
+    _computed_one_tree_bounds[label_key] = result;
     return result;
 }
 

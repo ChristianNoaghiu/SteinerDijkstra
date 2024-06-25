@@ -13,15 +13,15 @@ double DijkstraSteiner::get_or_compute_tsp_bound(
     _graph.check_valid_node(node);
 
     // check if the bound has already been computed and return it
-    const LabelKey bound_key = std::make_pair(node, terminal_subset);
+    const LabelKey label_key = std::make_pair(node, terminal_subset);
     if (!is_hamiltonian_path_computed)
     {
         compute_hamiltonian_paths();
     }
     // if no hamiltonian path has been computed yet, there is no need to search the map
-    else if (_computed_tsp_bounds.count(bound_key) > 0)
+    else if (_computed_tsp_bounds.count(label_key) > 0)
     {
-        return _computed_tsp_bounds[bound_key];
+        return _computed_tsp_bounds[label_key];
     }
 
     const SteinerGraph::MetricClosureStruct metric_closure_result = _graph.metric_closure();
@@ -79,7 +79,7 @@ double DijkstraSteiner::get_or_compute_tsp_bound(
     }
 
     // store the result dynamically
-    _computed_tsp_bounds[bound_key] = result;
+    _computed_tsp_bounds[label_key] = result;
     return result;
 }
 
@@ -113,20 +113,20 @@ void DijkstraSteiner::compute_hamiltonian_paths()
         _hamiltonian_paths[std::make_tuple(i, i, one_element_terminal_subset(i))] = 0;
     }
 
-    // subsets_of_size.at(n) stores all ullongs of terminal subsets of size n
-    std::vector<std::vector<unsigned long long>> subsets_of_size(_graph.num_terminals() + 1);
+    // terminal_subsets_of_size.at(n) stores all ullongs of terminal subsets of size n
+    std::vector<std::vector<unsigned long long>> terminal_subsets_of_size(_graph.num_terminals() + 1);
 
     /** @todo what if num_terminals exceeds 64? Or is exactly 64? */
     for (unsigned long long terminal_subset_ullong = 0; terminal_subset_ullong < (1ULL << _graph.num_terminals()); terminal_subset_ullong++)
     {
-        subsets_of_size.at(TerminalSubset(terminal_subset_ullong).count()).push_back(terminal_subset_ullong);
+        terminal_subsets_of_size.at(TerminalSubset(terminal_subset_ullong).count()).push_back(terminal_subset_ullong);
     }
 
     for (int n = 2; n <= _graph.num_terminals(); n++)
     {
         // iterate over all subsets of terminal_subset of size n
         /** @todo is this possible faster? */
-        for (unsigned long long terminal_subset_ullong : subsets_of_size.at(n))
+        for (unsigned long long terminal_subset_ullong : terminal_subsets_of_size.at(n))
         {
             // create the corresponding TerminalSubset
             TerminalSubset terminal_subset = terminal_subset_ullong;
