@@ -1,7 +1,8 @@
 #include "steinergraph.h"
+#include "dijkstra_steiner.cpp"
 #include <bitset>
 
-double SteinerGraph::bound(const bool lower_bound, const NodeId node, const TerminalSubset &R_without_I)
+double DijkstraSteiner::bound(const bool lower_bound, const SteinerGraph::NodeId node, const DijkstraSteiner::TerminalSubset &R_without_I)
 {
     double bound = 0;
     if (lower_bound)

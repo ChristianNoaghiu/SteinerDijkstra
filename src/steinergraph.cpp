@@ -115,6 +115,11 @@ const SteinerGraph::Node &SteinerGraph::get_node(const NodeId node) const
    return _nodes[node];
 }
 
+const std::vector<SteinerGraph::NodeId> &SteinerGraph::get_terminals() const
+{
+   return _terminals;
+}
+
 SteinerGraph::NodeId SteinerGraph::Neighbor::id() const
 {
    return _id;

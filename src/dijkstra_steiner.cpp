@@ -1,4 +1,9 @@
 #include "steinergraph.h"
+#include "dijkstra_steiner.h"
+
+DijkstraSteiner::DijkstraSteiner(const SteinerGraph &graph) : _graph(graph) {}
+
+#include "steinergraph.h"
 #include <queue>
 
 #include <bitset>
@@ -9,9 +14,9 @@
 
 namespace
 {
-    SteinerGraph::TerminalSubset minus_one(const SteinerGraph::TerminalSubset &input)
+    DijkstraSteiner::TerminalSubset minus_one(const DijkstraSteiner::TerminalSubset &input)
     {
-        SteinerGraph::TerminalSubset output = input;
+        DijkstraSteiner::TerminalSubset output = input;
         unsigned int i = 0;
         while (output[i] == 0)
         {
@@ -22,20 +27,12 @@ namespace
         return output;
     }
 }
-struct SteinerGraph::CompareWeightedLabelKey
-{
-    bool operator()(const WeightedLabelKey &a,
-                    const WeightedLabelKey &b) const
-    {
-        return a.first > b.first; // Vergleicht nur den double-Wert, also die Distanz
-    }
-};
 
-SteinerGraph SteinerGraph::dijkstra_steiner(const NodeId r0, const bool lower_bound)
+SteinerGraph DijkstraSteiner::compute_optimal_steiner_tree(const SteinerGraph::NodeId r0, const bool lower_bound)
 {
 
     // check if r0 is a terminal
-    if (!get_node(r0).is_terminal())
+    if (!_graph.get_node(r0).is_terminal())
     {
         throw std::invalid_argument("r0 is not a terminal");
     }
@@ -48,7 +45,7 @@ SteinerGraph SteinerGraph::dijkstra_steiner(const NodeId r0, const bool lower_bo
     std::priority_queue<WeightedLabelKey, std::vector<WeightedLabelKey>, CompareWeightedLabelKey> non_permanent_labels;
     // permanent_labels definition (P)
     LabelKeySet permanent_labels;
-    for (const NodeId &terminal : _terminals)
+    for (const SteinerGraph::NodeId &terminal : _graph.get_terminals())
     {
         if (terminal == r0)
         {
@@ -66,10 +63,10 @@ SteinerGraph SteinerGraph::dijkstra_steiner(const NodeId r0, const bool lower_bo
         non_permanent_labels.pop();
         permanent_labels.insert(current_label);
         double current_label_value = labels[current_label];
-        NodeId current_node = current_label.first;
-        for (const Neighbor &neighbor : get_node(current_node).adjacent_nodes()) // Iterieren über die von v ausgehenden Kanten
+        SteinerGraph::NodeId current_node = current_label.first;
+        for (const SteinerGraph::Neighbor &neighbor : _graph.get_node(current_node).adjacent_nodes()) // Iterieren über die von v ausgehenden Kanten
         {
-            NodeId neighbor_id = neighbor.id();                                          // zweiter Knoten der betrachteten Kante
+            SteinerGraph::NodeId neighbor_id = neighbor.id();                            // zweiter Knoten der betrachteten Kante
             double edge_weight = neighbor.edge_weight();                                 // Kantengewicht
             LabelKey neighbor_label = std::make_pair(neighbor_id, current_label.second); // (w, I) für den Kantennachbarn
             if (not permanent_labels.count(neighbor_label))
@@ -98,7 +95,7 @@ SteinerGraph SteinerGraph::dijkstra_steiner(const NodeId r0, const bool lower_bo
                     if (not labels.count(union_label) || current_label_value + labels[v_J_label] < labels[union_label]) // Fall das (v, J u I) noch keine Distanz bekommen hat sind wir schon im true-Fall und wir kommen aufgrund des ||'s in das if-bracket, wo es auf einen Wert gesetzt wird
                     {
                         labels[union_label] = current_label_value + labels[v_J_label];
-                        backtrack_data[union_label] = {std::make_pair(infinite_distance, current_label), std::make_pair(infinite_distance, v_J_label)};
+                        backtrack_data[union_label] = {std::make_pair(SteinerGraph::infinite_distance, current_label), std::make_pair(SteinerGraph::infinite_distance, v_J_label)};
                         TerminalSubset bound_input_2 = helper_variable ^ union_label.second;
                         bound_input_2.set(r0);
                         non_permanent_labels.push(std::make_pair(current_label_value + labels[v_J_label] + bound(lower_bound, current_node, bound_input_2), union_label));
@@ -108,7 +105,7 @@ SteinerGraph SteinerGraph::dijkstra_steiner(const NodeId r0, const bool lower_bo
         }
     }
     std::vector<EdgeTuple> edge_vector = backtrack(backtrack_data, final_permanent_label);
-    SteinerGraph result_graph = clear_edges();
+    SteinerGraph result_graph = _graph.clear_edges();
     for (EdgeTuple &edge : edge_vector)
     {
         result_graph.add_edge(std::get<0>(edge), std::get<1>(edge), std::get<2>(edge));
@@ -116,7 +113,7 @@ SteinerGraph SteinerGraph::dijkstra_steiner(const NodeId r0, const bool lower_bo
     return result_graph;
 }
 
-std::vector<SteinerGraph::EdgeTuple> SteinerGraph::backtrack(
+std::vector<DijktraSteiner::EdgeTuple> DijkstraSteiner::backtrack(
     const LabelKeyToWeightedLabelKeyVectorMap &backtrack_data,
     const LabelKey &current_label)
     const

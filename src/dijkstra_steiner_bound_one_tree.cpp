@@ -1,17 +1,19 @@
 // steinergraph_one_tree_bound.cpp (computing the 1-tree-bound from the Dijkstra-Steiner algorithm)
+#include "dijkstra_steiner.h"
 #include "steinergraph.h"
+#include <optional>
 
 /**
  * returns the 1-tree-bound from the Dijkstra-Steiner algorithm
  */
-double SteinerGraph::get_or_compute_one_tree_bound(
-    const NodeId node,
-    const SteinerGraph::TerminalSubset &terminal_subset,
-    const TerminalId r0)
+double DijkstraSteiner::get_or_compute_one_tree_bound(
+    const SteinerGraph::NodeId node,
+    const DijkstraSteiner::TerminalSubset &terminal_subset,
+    const SteinerGraph::TerminalId r0)
 {
     // check validity of parameters
-    check_valid_node(node);
-    check_valid_terminal(r0);
+    _graph.check_valid_node(node);
+    _graph.check_valid_terminal(r0);
 
     if (r0 >= static_cast<int>(terminal_subset.size()))
     {
@@ -48,7 +50,7 @@ double SteinerGraph::get_or_compute_one_tree_bound(
      * (which is not possible here since SteinerGraph cannot have
      * a SteinerGraph as an attribute)
      */
-    const SteinerGraph metric_closure_graph_result = metric_closure_graph(_distance_matrix);
+    const SteinerGraph metric_closure_graph_result = _graph.metric_closure_graph(_distance_matrix);
     const SteinerGraph mst_graph = metric_closure_graph_result.subgraph_mst(is_in_terminal_subset(terminal_subset));
     double mst_value = mst_graph.edge_weight_sum();
 
@@ -57,25 +59,25 @@ double SteinerGraph::get_or_compute_one_tree_bound(
 
     // iterate over all pairs of terminals
     /** @todo maybe do this by index shifting */
-    for (TerminalId i = 0; i < num_terminals(); i++)
+    for (SteinerGraph::TerminalId i = 0; i < _graph.num_terminals(); i++)
     {
         if (terminal_subset[i] == 0)
         {
             continue;
         }
 
-        for (TerminalId j = 0; j < num_terminals(); j++)
+        for (SteinerGraph::TerminalId j = 0; j < _graph.num_terminals(); j++)
         {
             if (terminal_subset[j] == 0)
             {
                 continue;
             }
 
-            NodeId node_i = _terminals.at(i);
-            NodeId node_j = _terminals.at(j);
+            SteinerGraph::NodeId node_i = _graph.get_terminals().at(i);
+            SteinerGraph::NodeId node_j = _graph.get_terminals().at(j);
 
             // if terminal_subset contains more than one node, the definition excludes the case i == j
-            if (i == j && terminal_subset_size(terminal_subset) > 1)
+            if (i == j && terminal_subset.count() > 1)
             {
                 continue;
             }
@@ -106,7 +108,7 @@ double SteinerGraph::get_or_compute_one_tree_bound(
 }
 
 /** @todo remove this */
-void SteinerGraph::test_one_tree_bound()
+void DijkstraSteiner::test_one_tree_bound()
 {
     /*double x1 = get_or_compute_one_tree_bound(0, 0b111, 0);
     double x2 = get_or_compute_one_tree_bound(0, 0b111, 0);*/

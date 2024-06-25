@@ -1,6 +1,7 @@
 // testgraph.cpp (Read Digraph from File and Print)
 
 #include "steinergraph.h"
+#include "dijkstra_steiner.h"
 #include <iostream>
 
 int main(int argc, char *argv[])
@@ -9,7 +10,8 @@ int main(int argc, char *argv[])
     {
         std::cout << "Hi" << std::endl;
         SteinerGraph g(argv[1]);
-        SteinerGraph dijkstra_steiner_result = g.dijkstra_steiner(0, false);
+        DijkstraSteiner algorithm(g);
+        SteinerGraph dijkstra_steiner_result = algorithm.compute_optimal_steiner_tree(0, false);
 
         dijkstra_steiner_result.print();
 
