@@ -71,7 +71,7 @@ SteinerGraph SteinerGraph::steiner_tree_mst_approximation() const
     check_connected_metric_closure(metric_closure_result.distance_matrix);
 
     const SteinerGraph metric_closure_graph_result = metric_closure_graph(metric_closure_result.distance_matrix);
-    const SteinerGraph mst_graph = metric_closure_graph_result.subgraph_mst(is_in_set(_terminals));
+    const SteinerGraph mst_graph = metric_closure_graph_result.subgraph_mst(is_terminal());
 
     std::vector<bool> visited(num_nodes(), false);
 

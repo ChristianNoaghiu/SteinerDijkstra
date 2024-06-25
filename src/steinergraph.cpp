@@ -17,12 +17,11 @@ void SteinerGraph::make_terminal(const NodeId new_terminal)
       throw std::runtime_error("Terminalstatus of Node cannot be changed due to undefined node");
    }
    _nodes[new_terminal].set_terminal();
-   _terminals.insert(new_terminal);
 
    // insert new_terminal into _terminal_vector if not already present
-   if (std::find(_terminals_vector.begin(), _terminals_vector.end(), new_terminal) == _terminals_vector.end())
+   if (std::find(_terminals.begin(), _terminals.end(), new_terminal) == _terminals.end())
    {
-      _terminals_vector.push_back(new_terminal);
+      _terminals.push_back(new_terminal);
    }
 }
 
@@ -104,7 +103,7 @@ SteinerGraph::NodeId SteinerGraph::num_nodes() const
 
 SteinerGraph::NodeId SteinerGraph::num_terminals() const
 {
-   return _terminals_vector.size();
+   return _terminals.size();
 }
 
 const SteinerGraph::Node &SteinerGraph::get_node(const NodeId node) const

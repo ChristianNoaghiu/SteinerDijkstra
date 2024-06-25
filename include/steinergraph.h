@@ -90,6 +90,7 @@ public:
   NodeId num_nodes() const;
   TerminalId num_terminals() const;
   const Node &get_node(const NodeId node) const;
+  const std::vector<NodeId> &get_terminals() const;
   int edge_weight_sum() const;
   void print() const;
 
@@ -121,8 +122,7 @@ private:
 
   std::vector<Node> _nodes;
   /** @todo replace this */
-  std::unordered_set<NodeId> _terminals;
-  std::vector<NodeId> _terminals_vector;
+  std::vector<NodeId> _terminals;
 
   // for queues in Dijkstra's and Prim's algorithms
   using NodeDistancePair = std::pair<SteinerGraph::NodeId, int>;
@@ -132,7 +132,7 @@ private:
   node_distance_pair_compare();
 
   const std::function<bool(const SteinerGraph::NodeId)> is_in_graph() const;
-  const std::function<bool(const SteinerGraph::NodeId)> is_in_set(const std::unordered_set<SteinerGraph::NodeId> &node_set) const;
+  const std::function<bool(const SteinerGraph::NodeId)> is_terminal() const;
   const std::function<bool(const SteinerGraph::NodeId)> is_in_terminal_subset(const TerminalSubset &terminal_subset) const;
 
   std::vector<std::vector<int>> _distance_matrix;

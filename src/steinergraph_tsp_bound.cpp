@@ -55,8 +55,8 @@ double SteinerGraph::get_or_compute_tsp_bound(
                 continue;
             }
             // convert TerminalId to NodeId for distance_matrix
-            NodeId node_i = _terminals_vector.at(i);
-            NodeId node_j = _terminals_vector.at(j);
+            NodeId node_i = _terminals.at(i);
+            NodeId node_j = _terminals.at(j);
 
             // compute the length of the Hamiltonian path from i to j
             HamiltonianPathKey hamilton_path_key = std::make_tuple(i, j, terminal_subset);
@@ -149,7 +149,7 @@ void SteinerGraph::compute_hamiltonian_paths()
                     }
 
                     // convert TerminalId to NodeId for distance_matrix
-                    NodeId node_j = _terminals_vector.at(j);
+                    NodeId node_j = _terminals.at(j);
 
                     // set this key to infinity
                     HamiltonianPathKey current_key = std::make_tuple(i, j, terminal_subset);
@@ -165,7 +165,7 @@ void SteinerGraph::compute_hamiltonian_paths()
                             continue;
                         }
 
-                        NodeId node_x = _terminals_vector.at(x);
+                        NodeId node_x = _terminals.at(x);
 
                         // compare and set the new value of the key
                         HamiltonianPathKey key_without_j = std::make_tuple(i, x, terminal_subset_without_j);

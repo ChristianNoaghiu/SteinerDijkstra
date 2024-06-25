@@ -48,7 +48,7 @@ SteinerGraph SteinerGraph::dijkstra_steiner(const NodeId r0, const bool lower_bo
     std::priority_queue<WeightedLabelKey, std::vector<WeightedLabelKey>, CompareWeightedLabelKey> non_permanent_labels;
     // permanent_labels definition (P)
     LabelKeySet permanent_labels;
-    for (const NodeId &terminal : _terminals_vector)
+    for (const NodeId &terminal : _terminals)
     {
         if (terminal == r0)
         {

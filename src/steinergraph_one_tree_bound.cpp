@@ -71,8 +71,8 @@ double SteinerGraph::get_or_compute_one_tree_bound(
                 continue;
             }
 
-            NodeId node_i = _terminals_vector.at(i);
-            NodeId node_j = _terminals_vector.at(j);
+            NodeId node_i = _terminals.at(i);
+            NodeId node_j = _terminals.at(j);
 
             // if terminal_subset contains more than one node, the definition excludes the case i == j
             if (i == j && terminal_subset_size(terminal_subset) > 1)

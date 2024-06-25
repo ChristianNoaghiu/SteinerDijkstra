@@ -37,20 +37,28 @@ const std::function<bool(const SteinerGraph::NodeId)> SteinerGraph::is_in_graph(
 }
 
 /**
- * lambda returning whether a node is contained in node_set
- * (for induced subgraph)
+ * lambda returning true for all terminals
+ * (whole graph as subgraph)
  */
-const std::function<bool(const SteinerGraph::NodeId)> SteinerGraph::is_in_set(const std::unordered_set<SteinerGraph::NodeId> &node_set) const
+const std::function<bool(const SteinerGraph::NodeId)> SteinerGraph::is_terminal() const
 {
-    return [node_set = node_set](const SteinerGraph::NodeId node)
+    return [&terminals = _terminals](__attribute__((unused)) const SteinerGraph::NodeId node)
     {
-        return node_set.count(node) != 0;
+        /**
+         * @todo Wunused complains about node not being used,
+         * therefore this redundant comparison
+         */
+        return std::find(terminals.begin(), terminals.end(), node) != terminals.end();
     };
 }
 
+/**
+ * lambda returning whether a node is contained in a terminal subset
+ * (for which being a terminal is necessary)
+ */
 const std::function<bool(const SteinerGraph::NodeId)> SteinerGraph::is_in_terminal_subset(const SteinerGraph::TerminalSubset &terminal_subset) const
 {
-    return [&terminal_subset = terminal_subset, &terminals = _terminals_vector](const SteinerGraph::NodeId node)
+    return [&terminal_subset = terminal_subset, &terminals = _terminals](const SteinerGraph::NodeId node)
     {
         auto terminal_iterator = std::find(terminals.begin(), terminals.end(), node);
 

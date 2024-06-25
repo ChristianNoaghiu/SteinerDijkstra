@@ -139,7 +139,7 @@ std::optional<SteinerGraph::NodeId> SteinerGraph::find_terminal_node() const
         return std::nullopt;
     }
 
-    return *_terminals.begin();
+    return _terminals.at(0);
 }
 
 /**
