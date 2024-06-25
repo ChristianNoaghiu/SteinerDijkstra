@@ -11,8 +11,8 @@
 class SteinerGraph
 {
 public:
-  using NodeId = int; // vertices are numbered 0,...,num_nodes()-1
-  using EdgeTuple = std::tuple<NodeId, NodeId, int>;
+  using NodeId = int;                                // vertices are numbered 0,...,num_nodes()-1
+  using EdgeTuple = std::tuple<NodeId, NodeId, int>; /** @todo maybe replace this by a struct */
   using TerminalId = int;
   using TerminalSubset = std::bitset<64>;
 

@@ -11,6 +11,7 @@ namespace
 {
     SteinerGraph::TerminalSubset minus_one(const SteinerGraph::TerminalSubset &input)
     {
+        /*
         SteinerGraph::TerminalSubset output = input;
         unsigned int i = 0;
         while (output[i] == 0)
@@ -20,6 +21,11 @@ namespace
         }
         output.reset(i);
         return output;
+        */
+        uint_fast64_t temp = input.to_ullong();
+        temp = temp - 1;
+        return SteinerGraph::TerminalSubset(temp);
+        /**/
     }
 }
 struct SteinerGraph::CompareWeightedLabelKey
