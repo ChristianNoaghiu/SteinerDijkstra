@@ -1,46 +1,44 @@
 // steinergraph_tsp_bound.cpp (computing the tsp-bound from the Dijkstra-Steiner algorithm)
-#include <unordered_map>
-#include <tuple>
-#include <functional>
+#include "dijkstra_steiner.h"
 #include "steinergraph.h"
 
 /**
  * returns the 1-tree-bound from the Dijkstra-Steiner algorithm
  */
-double SteinerGraph::get_or_compute_tsp_bound(
-    const NodeId node,
-    const SteinerGraph::TerminalSubset &terminal_subset)
+double DijkstraSteiner::get_or_compute_tsp_bound(
+    const SteinerGraph::NodeId node,
+    const DijkstraSteiner::TerminalSubset &terminal_subset)
 {
     // check validity of parameters
-    check_valid_node(node);
+    _graph.check_valid_node(node);
 
     // check if the bound has already been computed and return it
-    const BoundKey bound_key = std::make_pair(node, terminal_subset);
+    const LabelKey label_key = std::make_pair(node, terminal_subset);
     if (!is_hamiltonian_path_computed)
     {
         compute_hamiltonian_paths();
     }
     // if no hamiltonian path has been computed yet, there is no need to search the map
-    else if (_computed_tsp_bounds.count(bound_key) > 0)
+    else if (_computed_tsp_bounds.count(label_key) > 0)
     {
-        return _computed_tsp_bounds[bound_key];
+        return _computed_tsp_bounds[label_key];
     }
 
-    const MetricClosureStruct metric_closure_result = metric_closure();
+    const SteinerGraph::MetricClosureStruct metric_closure_result = _graph.metric_closure();
     const std::vector<std::vector<int>> &distance_matrix = metric_closure_result.distance_matrix;
-    check_connected_metric_closure(distance_matrix);
+    _graph.check_connected_metric_closure(distance_matrix);
 
     // compute the minimum of d(v,i) + d(v,j) + hp(i, j, I) as in the definition of the tsp bound
     double result = std::numeric_limits<double>::max();
     // iterate over all elements of the terminal_subset
-    for (TerminalId i = 0; i < num_terminals(); i++)
+    for (SteinerGraph::TerminalId i = 0; i < _graph.num_terminals(); i++)
     {
         if (!terminal_subset[i])
         {
             continue;
         }
 
-        for (TerminalId j = 0; j < num_terminals(); j++)
+        for (SteinerGraph::TerminalId j = 0; j < _graph.num_terminals(); j++)
         {
             /** @todo must we check i == j??
              * since a hamiltonian path is not possible with only two nodes (node and i == j),
@@ -55,8 +53,8 @@ double SteinerGraph::get_or_compute_tsp_bound(
                 continue;
             }
             // convert TerminalId to NodeId for distance_matrix
-            NodeId node_i = _terminals_vector.at(i);
-            NodeId node_j = _terminals_vector.at(j);
+            SteinerGraph::NodeId node_i = _graph.get_terminals().at(i);
+            SteinerGraph::NodeId node_j = _graph.get_terminals().at(j);
 
             // compute the length of the Hamiltonian path from i to j
             HamiltonianPathKey hamilton_path_key = std::make_tuple(i, j, terminal_subset);
@@ -81,7 +79,7 @@ double SteinerGraph::get_or_compute_tsp_bound(
     }
 
     // store the result dynamically
-    _computed_tsp_bounds[bound_key] = result;
+    _computed_tsp_bounds[label_key] = result;
     return result;
 }
 
@@ -89,7 +87,7 @@ double SteinerGraph::get_or_compute_tsp_bound(
  * returns the hamiltonian path value (stored in _hamiltonian_paths) for a given key
  * or infinity if no entry has been created yet
  */
-double SteinerGraph::get_hamiltonian_path(const SteinerGraph::HamiltonianPathKey &key) const
+double DijkstraSteiner::get_hamiltonian_path(const DijkstraSteiner::HamiltonianPathKey &key) const
 {
     if (!is_hamiltonian_path_computed || _hamiltonian_paths.count(key) == 0)
     {
@@ -102,7 +100,7 @@ double SteinerGraph::get_hamiltonian_path(const SteinerGraph::HamiltonianPathKey
  * computes hp as in the provided algorithm for the tsp bound
  * and stores the result in _hamiltonian_paths
  */
-void SteinerGraph::compute_hamiltonian_paths()
+void DijkstraSteiner::compute_hamiltonian_paths()
 {
     // this must happen at the beginning of the method, since otherwise
     // get_hamiltonian_path would return infinity inside the algorithm
@@ -110,38 +108,38 @@ void SteinerGraph::compute_hamiltonian_paths()
     is_hamiltonian_path_computed = true;
 
     // initialize start values
-    for (TerminalId i = 0; i < num_terminals(); i++)
+    for (SteinerGraph::TerminalId i = 0; i < _graph.num_terminals(); i++)
     {
         _hamiltonian_paths[std::make_tuple(i, i, one_element_terminal_subset(i))] = 0;
     }
 
-    // subsets_of_size.at(n) stores all ullongs of terminal subsets of size n
-    std::vector<std::vector<unsigned long long>> subsets_of_size(num_terminals() + 1);
+    // terminal_subsets_of_size.at(n) stores all ullongs of terminal subsets of size n
+    std::vector<std::vector<unsigned long long>> terminal_subsets_of_size(_graph.num_terminals() + 1);
 
     /** @todo what if num_terminals exceeds 64? Or is exactly 64? */
-    for (unsigned long long terminal_subset_ullong = 0; terminal_subset_ullong < (1ULL << num_terminals()); terminal_subset_ullong++)
+    for (unsigned long long terminal_subset_ullong = 0; terminal_subset_ullong < (1ULL << _graph.num_terminals()); terminal_subset_ullong++)
     {
-        subsets_of_size.at(TerminalSubset(terminal_subset_ullong).count()).push_back(terminal_subset_ullong);
+        terminal_subsets_of_size.at(TerminalSubset(terminal_subset_ullong).count()).push_back(terminal_subset_ullong);
     }
 
-    for (int n = 2; n <= num_terminals(); n++)
+    for (int n = 2; n <= _graph.num_terminals(); n++)
     {
         // iterate over all subsets of terminal_subset of size n
         /** @todo is this possible faster? */
-        for (unsigned long long terminal_subset_ullong : subsets_of_size.at(n))
+        for (unsigned long long terminal_subset_ullong : terminal_subsets_of_size.at(n))
         {
             // create the corresponding TerminalSubset
             TerminalSubset terminal_subset = terminal_subset_ullong;
 
             // iterate over all elements i, j of terminal_subset
-            for (TerminalId i = 0; i < num_terminals(); i++)
+            for (SteinerGraph::TerminalId i = 0; i < _graph.num_terminals(); i++)
             {
                 if (!terminal_subset[i])
                 {
                     continue;
                 }
 
-                for (TerminalId j = 0; j < num_terminals(); j++)
+                for (SteinerGraph::TerminalId j = 0; j < _graph.num_terminals(); j++)
                 {
                     if (!terminal_subset[j])
                     {
@@ -149,7 +147,7 @@ void SteinerGraph::compute_hamiltonian_paths()
                     }
 
                     // convert TerminalId to NodeId for distance_matrix
-                    NodeId node_j = _terminals_vector.at(j);
+                    SteinerGraph::NodeId node_j = _graph.get_terminals().at(j);
 
                     // set this key to infinity
                     HamiltonianPathKey current_key = std::make_tuple(i, j, terminal_subset);
@@ -158,14 +156,14 @@ void SteinerGraph::compute_hamiltonian_paths()
                     TerminalSubset terminal_subset_without_j = terminal_subset;
                     terminal_subset_without_j[j] = 0;
 
-                    for (TerminalId x = 0; x < num_terminals(); x++)
+                    for (SteinerGraph::TerminalId x = 0; x < _graph.num_terminals(); x++)
                     {
                         if (!terminal_subset[x] || x == j)
                         {
                             continue;
                         }
 
-                        NodeId node_x = _terminals_vector.at(x);
+                        SteinerGraph::NodeId node_x = _graph.get_terminals().at(x);
 
                         // compare and set the new value of the key
                         HamiltonianPathKey key_without_j = std::make_tuple(i, x, terminal_subset_without_j);
@@ -190,7 +188,7 @@ void SteinerGraph::compute_hamiltonian_paths()
     }
 }
 
-void SteinerGraph::test_tsp_bound()
+void DijkstraSteiner::test_tsp_bound()
 {
     compute_hamiltonian_paths();
     std::cout << get_hamiltonian_path(std::make_tuple(0, 0, 0b001)) << "\n";

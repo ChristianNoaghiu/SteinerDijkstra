@@ -1,17 +1,19 @@
 // steinergraph_one_tree_bound.cpp (computing the 1-tree-bound from the Dijkstra-Steiner algorithm)
+#include "dijkstra_steiner.h"
 #include "steinergraph.h"
+#include <optional>
 
 /**
  * returns the 1-tree-bound from the Dijkstra-Steiner algorithm
  */
-double SteinerGraph::get_or_compute_one_tree_bound(
-    const NodeId node,
-    const SteinerGraph::TerminalSubset &terminal_subset,
-    const TerminalId r0)
+double DijkstraSteiner::get_or_compute_one_tree_bound(
+    const SteinerGraph::NodeId node,
+    const DijkstraSteiner::TerminalSubset &terminal_subset,
+    const SteinerGraph::TerminalId r0)
 {
     // check validity of parameters
-    check_valid_node(node);
-    check_valid_terminal(r0);
+    _graph.check_valid_node(node);
+    _graph.check_valid_terminal(r0);
 
     if (r0 >= static_cast<int>(terminal_subset.size()))
     {
@@ -35,10 +37,10 @@ double SteinerGraph::get_or_compute_one_tree_bound(
     }
 
     // check if the bound has already been computed and return it
-    const BoundKey bound_key = std::make_pair(node, terminal_subset);
-    if (_computed_one_tree_bounds.count(bound_key) > 0)
+    const LabelKey label_key = std::make_pair(node, terminal_subset);
+    if (_computed_one_tree_bounds.count(label_key) > 0)
     {
-        return _computed_one_tree_bounds[bound_key];
+        return _computed_one_tree_bounds[label_key];
     }
 
     compute_distances_and_check_connected();
@@ -48,7 +50,7 @@ double SteinerGraph::get_or_compute_one_tree_bound(
      * (which is not possible here since SteinerGraph cannot have
      * a SteinerGraph as an attribute)
      */
-    const SteinerGraph metric_closure_graph_result = metric_closure_graph(_distance_matrix);
+    const SteinerGraph metric_closure_graph_result = _graph.metric_closure_graph(_distance_matrix);
     const SteinerGraph mst_graph = metric_closure_graph_result.subgraph_mst(is_in_terminal_subset(terminal_subset));
     double mst_value = mst_graph.edge_weight_sum();
 
@@ -57,25 +59,25 @@ double SteinerGraph::get_or_compute_one_tree_bound(
 
     // iterate over all pairs of terminals
     /** @todo maybe do this by index shifting */
-    for (TerminalId i = 0; i < num_terminals(); i++)
+    for (SteinerGraph::TerminalId i = 0; i < _graph.num_terminals(); i++)
     {
         if (terminal_subset[i] == 0)
         {
             continue;
         }
 
-        for (TerminalId j = 0; j < num_terminals(); j++)
+        for (SteinerGraph::TerminalId j = 0; j < _graph.num_terminals(); j++)
         {
             if (terminal_subset[j] == 0)
             {
                 continue;
             }
 
-            NodeId node_i = _terminals_vector.at(i);
-            NodeId node_j = _terminals_vector.at(j);
+            SteinerGraph::NodeId node_i = _graph.get_terminals().at(i);
+            SteinerGraph::NodeId node_j = _graph.get_terminals().at(j);
 
             // if terminal_subset contains more than one node, the definition excludes the case i == j
-            if (i == j && terminal_subset_size(terminal_subset) > 1)
+            if (i == j && terminal_subset.count() > 1)
             {
                 continue;
             }
@@ -101,12 +103,12 @@ double SteinerGraph::get_or_compute_one_tree_bound(
 
     // store the result dynamically
     double result = (static_cast<double>(distance_sum) / 2) + (static_cast<double>(mst_value) / 2);
-    _computed_one_tree_bounds[bound_key] = result;
+    _computed_one_tree_bounds[label_key] = result;
     return result;
 }
 
 /** @todo remove this */
-void SteinerGraph::test_one_tree_bound()
+void DijkstraSteiner::test_one_tree_bound()
 {
     /*double x1 = get_or_compute_one_tree_bound(0, 0b111, 0);
     double x2 = get_or_compute_one_tree_bound(0, 0b111, 0);*/
