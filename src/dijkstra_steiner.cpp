@@ -61,19 +61,6 @@ SteinerGraph DijkstraSteiner::dijkstra_steiner_algorithm(
     LabelKeySet permanent_labels;
 
     // initialization
-    /*
-    for (const SteinerGraph::NodeId &terminal : _graph.get_terminals())
-    {
-        if (terminal == r0)
-        {
-            continue;
-        }
-        const LabelKey terminal_label = std::make_pair(terminal, TerminalSubset(1 << terminal)); // FEHLER! TerminalSubset(1 << terminal) ist falsch, da terminal nicht der Index ist, sondern der Wert
-        labels[terminal_label] = 0;
-        non_permanent_labels.push(std::make_pair(0, terminal_label));
-        helper_variable.set(terminal);
-    }
-    */
     for (SteinerGraph::TerminalId terminal_id = 0; terminal_id < _graph.num_terminals(); terminal_id++)
     {
         const SteinerGraph::NodeId terminal_node_id = _graph.get_terminals().at(terminal_id);
@@ -86,7 +73,9 @@ SteinerGraph DijkstraSteiner::dijkstra_steiner_algorithm(
         non_permanent_labels.push(std::make_pair(0, terminal_label));
         helper_variable.set(terminal_id);
     }
+
     const LabelKey final_permanent_label = make_pair(r0, helper_variable);
+    // main loop doing all the work
     while (not permanent_labels.count(final_permanent_label))
     {
         LabelKey current_label = non_permanent_labels.top().second; // (v, I) of the priority-queue-element (pq ordered by lowest distance)
@@ -136,10 +125,13 @@ SteinerGraph DijkstraSteiner::dijkstra_steiner_algorithm(
     }
     std::vector<EdgeTuple> edge_vector = backtrack(backtrack_data, final_permanent_label);
     SteinerGraph result_graph = _graph.clear_edges();
+    unsigned int weight = 0;
     for (EdgeTuple &edge : edge_vector)
     {
         result_graph.add_edge(std::get<0>(edge), std::get<1>(edge), std::get<2>(edge));
+        weight += std::get<2>(edge);
     }
+    std::cout << "The weight of the Steiner tree is: " << weight << std::endl;
     return result_graph;
 }
 
