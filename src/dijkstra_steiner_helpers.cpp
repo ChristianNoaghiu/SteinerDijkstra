@@ -55,37 +55,30 @@ bool DijkstraSteiner::is_terminal_subset_of(const SteinerGraph::TerminalSubset &
 /**
  * hash function for a map of pairs
  */
-struct DijkstraSteiner::PairHash
+template <typename T, typename U>
+std::size_t DijkstraSteiner::PairHash<T, U>::operator()(const std::pair<T, U> &x) const
 {
-public:
-    template <typename T, typename U>
-    std::size_t operator()(const std::pair<T, U> &x) const
-    {
-        return std::hash<T>()(x.first) ^ std::hash<U>()(x.second);
-    }
-};
+    return std::hash<T>()(x.first) ^ std::hash<U>()(x.second.to_ulong());
+}
 
 /**
  * hash function for a map of 3-tuples
  */
-struct DijkstraSteiner::TripleHash
+template <typename T, typename U, typename V>
+::std::size_t DijkstraSteiner::TripleHash<T, U, V>::operator()(const std::tuple<T, U, V> &x) const
 {
-public:
-    template <typename T, typename U, typename V>
-    std::size_t operator()(const std::tuple<T, U, V> &x) const
-    {
-        return std::hash<T>()(std::get<0>(x)) ^ std::hash<U>()(std::get<1>(x)) ^ std::hash<V>()(std::get<2>(x));
-    }
-};
+    return std::hash<T>()(std::get<0>(x)) ^ std::hash<U>()(std::get<1>(x)) ^ std::hash<V>()(std::get<2>(x).to_ulong());
+}
+
+// Explicit instantiation of the used template structs
+template struct DijkstraSteiner::PairHash<SteinerGraph::NodeId, DijkstraSteiner::TerminalSubset>;
+template struct DijkstraSteiner::TripleHash<SteinerGraph::TerminalId, SteinerGraph::TerminalId, DijkstraSteiner::TerminalSubset>;
 
 /**
  * comparison function for a priority queue of weighted label keys
  */
-struct DijkstraSteiner::CompareWeightedLabelKey
+bool DijkstraSteiner::CompareWeightedLabelKey::operator()(const DijkstraSteiner::WeightedLabelKey &a,
+                                                          const DijkstraSteiner::WeightedLabelKey &b) const
 {
-    bool operator()(const WeightedLabelKey &a,
-                    const WeightedLabelKey &b) const
-    {
-        return a.first > b.first; // Vergleicht nur den double-Wert, also die Distanz
-    }
-};
+    return a.first > b.first; // Vergleicht nur den double-Wert, also die Distanz
+}

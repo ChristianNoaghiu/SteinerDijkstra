@@ -9,6 +9,8 @@
 #include <bitset>
 #include <unordered_map>
 #include <unordered_set>
+#include <tuple>
+#include <utility>
 
 class DijkstraSteiner
 {
@@ -29,9 +31,32 @@ private:
     int get_or_compute_distance(const SteinerGraph::NodeId node1, const SteinerGraph::NodeId node2);
 
     // helper types
-    struct PairHash;
-    struct TripleHash;
-    struct CompareWeightedLabelKey;
+    template <typename T, typename U>
+    struct PairHash
+    {
+    public:
+        std::size_t operator()(const std::pair<T, U> &x) const;
+    };
+    template <typename T, typename U, typename V>
+    struct TripleHash
+    {
+    public:
+        std::size_t operator()(const std::tuple<T, U, V> &x) const;
+    };
+
+    using EdgeTuple = std::tuple<SteinerGraph::NodeId, SteinerGraph::NodeId, int>;
+    using LabelKey = std::pair<SteinerGraph::NodeId, TerminalSubset>;
+    using WeightedLabelKey = std::pair<double, LabelKey>;
+    using LabelKeyToDoubleMap = std::unordered_map<LabelKey, double, PairHash<SteinerGraph::NodeId, TerminalSubset>>;
+    using LabelKeyToWeightedLabelKeyVectorMap = std::unordered_map<LabelKey, std::vector<WeightedLabelKey>, PairHash<SteinerGraph::NodeId, TerminalSubset>>;
+    using LabelKeySet = std::unordered_set<LabelKey, PairHash<SteinerGraph::NodeId, TerminalSubset>>;
+
+    struct CompareWeightedLabelKey
+    {
+    public:
+        bool operator()(const WeightedLabelKey &a,
+                        const WeightedLabelKey &b) const;
+    };
 
     const std::function<bool(const SteinerGraph::NodeId)> is_in_terminal_subset(const TerminalSubset &terminal_subset) const;
     TerminalSubset one_element_terminal_subset(const SteinerGraph::TerminalId terminal_id) const;
@@ -39,13 +64,6 @@ private:
         const TerminalSubset &subset,
         const TerminalSubset &superset)
         const;
-
-    using EdgeTuple = std::tuple<SteinerGraph::NodeId, SteinerGraph::NodeId, int>;
-    using LabelKey = std::pair<SteinerGraph::NodeId, TerminalSubset>;
-    using WeightedLabelKey = std::pair<double, LabelKey>;
-    using LabelKeyToDoubleMap = std::unordered_map<LabelKey, double, PairHash>;
-    using LabelKeyToWeightedLabelKeyVectorMap = std::unordered_map<LabelKey, std::vector<WeightedLabelKey>, PairHash>;
-    using LabelKeySet = std::unordered_set<LabelKey, PairHash>;
 
     // j-terminal bound
     /**
@@ -76,7 +94,7 @@ private:
     /** @todo check if all functions are really used */
     // tsp bound
     using HamiltonianPathKey = std::tuple<SteinerGraph::NodeId, SteinerGraph::NodeId, TerminalSubset>;
-    using HamiltonianPathKeyToDoubleMap = std::unordered_map<HamiltonianPathKey, double, TripleHash>;
+    using HamiltonianPathKeyToDoubleMap = std::unordered_map<HamiltonianPathKey, double, TripleHash<SteinerGraph::TerminalId, SteinerGraph::TerminalId, TerminalSubset>>;
     HamiltonianPathKeyToDoubleMap _hamiltonian_paths;
     double get_hamiltonian_path(const HamiltonianPathKey &key) const;
     /** stores whether the hamiltonian path lengths have already been computed */

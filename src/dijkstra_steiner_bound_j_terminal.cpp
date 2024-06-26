@@ -73,7 +73,7 @@ double DijkstraSteiner::get_or_compute_j_terminal_bound(
                     result = smt_without_node;
                 }
 
-                TerminalSubset terminal_subset_J_with_node = terminal_subset_J;
+                // TerminalSubset terminal_subset_J_with_node = terminal_subset_J;
             }
         }
     }
