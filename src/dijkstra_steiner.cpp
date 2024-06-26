@@ -12,60 +12,96 @@ DijkstraSteiner::DijkstraSteiner(const SteinerGraph &graph) : _graph(graph) {}
 #include <unordered_map>
 #include <vector>
 
-namespace
-{
-    DijkstraSteiner::TerminalSubset minus_one(const DijkstraSteiner::TerminalSubset &input)
-    {
-        unsigned long long temp = input.to_ullong();
-        temp = temp - 1;
-        return DijkstraSteiner::TerminalSubset(temp);
-    }
-}
-
 SteinerGraph DijkstraSteiner::compute_optimal_steiner_tree(const SteinerGraph::NodeId r0, const bool lower_bound)
 {
-
-    // check if r0 is a terminal
-    if (!_graph.get_node(r0).is_terminal())
+    TerminalSubset terminals = 0;
+    for (const SteinerGraph::NodeId &terminal : _graph.get_terminals())
     {
-        throw std::invalid_argument("r0 is not a terminal");
+        terminals.set(terminal);
     }
+    return dijkstra_steiner_algorithm(r0, lower_bound, terminals);
+}
+
+DijkstraSteiner::TerminalSubset DijkstraSteiner::minus_one(const DijkstraSteiner::TerminalSubset &input)
+{
+    unsigned long long temp = input.to_ullong();
+    temp = temp - 1;
+    return TerminalSubset(temp);
+}
+
+SteinerGraph DijkstraSteiner::dijkstra_steiner_algorithm(
+    const SteinerGraph::NodeId r0,
+    const bool lower_bound,
+    const DijkstraSteiner::TerminalSubset &terminalsubset) // terminalsubset is a bitset, we need this for the bound using this algorithm on a terminal-subset
+{
+
+    // check if r0 is in the given terminal subset and a terminal
+    if (terminalsubset[r0] && !_graph.get_node(r0).is_terminal())
+    {
+        throw std::invalid_argument("r0 is either not a terminal or not in the given terminal subset");
+    }
+    else // check if the given terminal subset is a subset of the set of all terminals
+    {
+        /** @todo check if this is a good way of doing it */
+        const TerminalSubset temp = TerminalSubset().set();
+        if (!(is_terminal_subset_of(terminalsubset, temp))) // this works because is_terminal_subset_of only iterates over the bits 0, 1, ..., num_terminals()-1
+        {
+            throw std::invalid_argument("The given terminal subset is not a subset of the set of all terminals");
+        }
+    }
+
     TerminalSubset helper_variable = 0;
     // labels definition
     LabelKeyToDoubleMap labels;
     // backtrack definition
-    LabelKeyToWeightedLabelKeyVectorMap backtrack_data; // vector von pairs, da mehrere label-pairs zu einem (v, I) gehören können
+    LabelKeyToWeightedLabelKeyVectorMap backtrack_data; // vector of pairs, since several label-pairs can be associated with (v, I)
     // non_permanent_labels definition (N)
     std::priority_queue<WeightedLabelKey, std::vector<WeightedLabelKey>, CompareWeightedLabelKey> non_permanent_labels;
     // permanent_labels definition (P)
     LabelKeySet permanent_labels;
+
+    // initialization
+    /*
     for (const SteinerGraph::NodeId &terminal : _graph.get_terminals())
     {
         if (terminal == r0)
         {
             continue;
         }
-        LabelKey terminal_label = std::make_pair(terminal, TerminalSubset(1 << terminal));
+        const LabelKey terminal_label = std::make_pair(terminal, TerminalSubset(1 << terminal)); // FEHLER! TerminalSubset(1 << terminal) ist falsch, da terminal nicht der Index ist, sondern der Wert
         labels[terminal_label] = 0;
         non_permanent_labels.push(std::make_pair(0, terminal_label));
         helper_variable.set(terminal);
     }
+    */
+    for (SteinerGraph::TerminalId terminal_id = 0; terminal_id < _graph.num_terminals(); terminal_id++)
+    {
+        const SteinerGraph::NodeId terminal_node_id = _graph.get_terminals().at(terminal_id);
+        if (terminal_node_id == r0)
+        {
+            continue;
+        }
+        const LabelKey terminal_label = std::make_pair(terminal_node_id, TerminalSubset(1 << terminal_id));
+        labels[terminal_label] = 0;
+        non_permanent_labels.push(std::make_pair(0, terminal_label));
+        helper_variable.set(terminal_id);
+    }
     const LabelKey final_permanent_label = make_pair(r0, helper_variable);
     while (not permanent_labels.count(final_permanent_label))
     {
-        LabelKey current_label = non_permanent_labels.top().second; // (v, I) des priority-queue-Elements (geordnet nach niedrigster Distanz)
+        LabelKey current_label = non_permanent_labels.top().second; // (v, I) of the priority-queue-element (pq ordered by lowest distance)
         non_permanent_labels.pop();
         permanent_labels.insert(current_label);
         double current_label_value = labels[current_label];
         SteinerGraph::NodeId current_node = current_label.first;
         for (const SteinerGraph::Neighbor &neighbor : _graph.get_node(current_node).adjacent_nodes()) // Iterieren über die von v ausgehenden Kanten
         {
-            SteinerGraph::NodeId neighbor_id = neighbor.id();                            // zweiter Knoten der betrachteten Kante
-            double edge_weight = neighbor.edge_weight();                                 // Kantengewicht
-            LabelKey neighbor_label = std::make_pair(neighbor_id, current_label.second); // (w, I) für den Kantennachbarn
+            SteinerGraph::NodeId neighbor_id = neighbor.id();                            // second node of the edge
+            double edge_weight = neighbor.edge_weight();                                 // edge weight
+            LabelKey neighbor_label = std::make_pair(neighbor_id, current_label.second); // (w, I) for the neighbor "w"
             if (not permanent_labels.count(neighbor_label))
             {
-                if (not labels.count(neighbor_label) || current_label_value + edge_weight < labels[neighbor_label]) // Der erste Fall ist, falls der Nachbar noch keine Distanz bekommen hat, also unendlich weit weg ist, falls dies der Fall ist, ist das Statement true und wir kommen sofort in den if-bracket
+                if (not labels.count(neighbor_label) || current_label_value + edge_weight < labels[neighbor_label]) // If (w, I) doesn't have a labelvalue the "||" ensures that, since the first part of the statement is true, the second part is not evaluated
                 {
                     labels[neighbor_label] = current_label_value + edge_weight;
                     backtrack_data[neighbor_label] = {std::make_pair(edge_weight, current_label)};
@@ -77,7 +113,7 @@ SteinerGraph DijkstraSteiner::compute_optimal_steiner_tree(const SteinerGraph::N
         }
 
         TerminalSubset R_r0_without_I = helper_variable ^ current_label.second;
-        for (TerminalSubset J = R_r0_without_I; J.any(); J = minus_one(J) & R_r0_without_I) // Iterieren über alle nicht-leeren Teilmengen J von (R \ {r_0}) \ I
+        for (TerminalSubset J = R_r0_without_I; J.any(); J = minus_one(J) & R_r0_without_I) // Iterieren through all non-empty subsets J of (R \ {r_0}) \ I
         {
             LabelKey v_J_label = std::make_pair(current_label.first, J);
             if (permanent_labels.count(v_J_label)) // prüft ob (v, J) \elem P
@@ -85,8 +121,8 @@ SteinerGraph DijkstraSteiner::compute_optimal_steiner_tree(const SteinerGraph::N
                 LabelKey union_label = std::make_pair(current_label.first, J | current_label.second);
                 if (not permanent_labels.count(union_label)) // prüft ob (v, J u I) \notelem P
                 {
-                    //  müssen prüfen ob label(v, I) + label(v, J) < label(v, I u J) ------- ist schon klar, das v, I und v, J in labels sind? Yes, (v, I) weil es in N gelandet ist und (v, J) weil es in P gelandet ist
-                    if (not labels.count(union_label) || current_label_value + labels[v_J_label] < labels[union_label]) // Fall das (v, J u I) noch keine Distanz bekommen hat sind wir schon im true-Fall und wir kommen aufgrund des ||'s in das if-bracket, wo es auf einen Wert gesetzt wird
+                    // it is known, that there is a labelvalue for (v, I) and (v, J), it is not given for (v, J u I)
+                    if (not labels.count(union_label) || current_label_value + labels[v_J_label] < labels[union_label]) // If (v, J u I)  doesn't have a labelvalue the "||" ensures that, since the first part of the statement is true, the second part is not evaluated
                     {
                         labels[union_label] = current_label_value + labels[v_J_label];
                         backtrack_data[union_label] = {std::make_pair(SteinerGraph::infinite_distance, current_label), std::make_pair(SteinerGraph::infinite_distance, v_J_label)};

@@ -8,12 +8,12 @@ DijkstraSteiner::TerminalSubset DijkstraSteiner::one_element_terminal_subset(con
     _graph.check_valid_terminal(terminal_id);
     TerminalSubset terminal_subset;
     terminal_subset[terminal_id] = 1;
-    return terminal_subset;
+    return terminal_subset; /** @todo maybe change the 3 lines above to "return TerminalSubset(1 << terminal_id)" */
 }
 
 /**
  * lambda returning whether a node is contained in a terminal subset
- * (for which being a terminal is necessary)
+ * (for which it being a terminal is necessary)
  */
 const std::function<bool(const SteinerGraph::NodeId)> DijkstraSteiner::is_in_terminal_subset(const DijkstraSteiner::TerminalSubset &terminal_subset) const
 {

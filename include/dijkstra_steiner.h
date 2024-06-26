@@ -15,11 +15,11 @@
 class DijkstraSteiner
 {
 public:
-    DijkstraSteiner(const SteinerGraph &graph);
-    SteinerGraph compute_optimal_steiner_tree(const SteinerGraph::NodeId r0, const bool lower_bound);
-
-    /** @todo make private */
+    /** @todo fix this */
     using TerminalSubset = std::bitset<64>;
+    DijkstraSteiner(const SteinerGraph &graph);
+    // wrapper for the dijkstra_steiner_algorithm with all terminals
+    SteinerGraph compute_optimal_steiner_tree(const SteinerGraph::NodeId r0, const bool lower_bound);
 
 private:
     SteinerGraph _graph;
@@ -43,7 +43,8 @@ private:
     public:
         std::size_t operator()(const std::tuple<T, U, V> &x) const;
     };
-
+    /** @todo fix this */
+    // using TerminalSubset = std::bitset<64>;
     using EdgeTuple = std::tuple<SteinerGraph::NodeId, SteinerGraph::NodeId, int>;
     using LabelKey = std::pair<SteinerGraph::NodeId, TerminalSubset>;
     using WeightedLabelKey = std::pair<double, LabelKey>;
@@ -58,7 +59,10 @@ private:
                         const WeightedLabelKey &b) const;
     };
 
-    const std::function<bool(const SteinerGraph::NodeId)> is_in_terminal_subset(const TerminalSubset &terminal_subset) const;
+    const std::function<bool(const SteinerGraph::NodeId)> is_in_terminal_subset(
+        const TerminalSubset &terminal_subset)
+        const;
+
     TerminalSubset one_element_terminal_subset(const SteinerGraph::TerminalId terminal_id) const;
     bool is_terminal_subset_of(
         const TerminalSubset &subset,
@@ -94,7 +98,11 @@ private:
     /** @todo check if all functions are really used */
     // tsp bound
     using HamiltonianPathKey = std::tuple<SteinerGraph::NodeId, SteinerGraph::NodeId, TerminalSubset>;
-    using HamiltonianPathKeyToDoubleMap = std::unordered_map<HamiltonianPathKey, double, TripleHash<SteinerGraph::TerminalId, SteinerGraph::TerminalId, TerminalSubset>>;
+    using HamiltonianPathKeyToDoubleMap = std::unordered_map<
+        HamiltonianPathKey,
+        double,
+        TripleHash<SteinerGraph::TerminalId, SteinerGraph::TerminalId, TerminalSubset>>;
+
     HamiltonianPathKeyToDoubleMap _hamiltonian_paths;
     double get_hamiltonian_path(const HamiltonianPathKey &key) const;
     /** stores whether the hamiltonian path lengths have already been computed */
@@ -110,10 +118,16 @@ private:
     double bound(const bool lower_bound, const SteinerGraph::NodeId node, const TerminalSubset &R_without_I);
 
     // Dijkstra-Steiner algorithm
-    std::vector<EdgeTuple> backtrack(const LabelKeyToWeightedLabelKeyVectorMap &backtrack, const LabelKey &current_label) const;
+    std::vector<EdgeTuple> backtrack(
+        const LabelKeyToWeightedLabelKeyVectorMap &backtrack,
+        const LabelKey &current_label) const;
 
     /** @todo remove this */
     // testing
     void test_one_tree_bound();
     void test_tsp_bound();
+
+    // helper function for loop in dijkstra_steiner_algorithm
+    TerminalSubset minus_one(const TerminalSubset &input);
+    SteinerGraph dijkstra_steiner_algorithm(const SteinerGraph::NodeId r0, const bool lower_bound, const TerminalSubset &terminals);
 };
