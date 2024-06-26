@@ -58,7 +58,7 @@ bool DijkstraSteiner::is_terminal_subset_of(const SteinerGraph::TerminalSubset &
 template <typename T, typename U>
 std::size_t DijkstraSteiner::PairHash<T, U>::operator()(const std::pair<T, U> &x) const
 {
-    return std::hash<T>()(x.first) ^ std::hash<U>()(x.second.to_ulong());
+    return std::hash<T>()(x.first) ^ std::hash<U>()(x.second.to_ullong());
 }
 
 /**
@@ -67,7 +67,7 @@ std::size_t DijkstraSteiner::PairHash<T, U>::operator()(const std::pair<T, U> &x
 template <typename T, typename U, typename V>
 ::std::size_t DijkstraSteiner::TripleHash<T, U, V>::operator()(const std::tuple<T, U, V> &x) const
 {
-    return std::hash<T>()(std::get<0>(x)) ^ std::hash<U>()(std::get<1>(x)) ^ std::hash<V>()(std::get<2>(x).to_ulong());
+    return std::hash<T>()(std::get<0>(x)) ^ std::hash<U>()(std::get<1>(x)) ^ std::hash<V>()(std::get<2>(x).to_ullong());
 }
 
 // Explicit instantiation of the used template structs

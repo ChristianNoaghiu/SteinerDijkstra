@@ -16,15 +16,9 @@ namespace
 {
     DijkstraSteiner::TerminalSubset minus_one(const DijkstraSteiner::TerminalSubset &input)
     {
-        DijkstraSteiner::TerminalSubset output = input;
-        unsigned int i = 0;
-        while (output[i] == 0)
-        {
-            output.set(i);
-            i++;
-        }
-        output.reset(i);
-        return output;
+        unsigned long long temp = input.to_ullong();
+        temp = temp - 1;
+        return DijkstraSteiner::TerminalSubset(temp);
     }
 }
 
