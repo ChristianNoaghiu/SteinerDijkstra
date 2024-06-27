@@ -6,9 +6,7 @@
 DijkstraSteiner::TerminalSubset DijkstraSteiner::one_element_terminal_subset(const SteinerGraph::TerminalId terminal_id) const
 {
     _graph.check_valid_terminal(terminal_id);
-    TerminalSubset terminal_subset;
-    terminal_subset[terminal_id] = 1;
-    return terminal_subset; /** @todo maybe change the 3 lines above to "return TerminalSubset(1 << terminal_id)" */
+    return (TerminalSubset(1) << terminal_id);
 }
 
 /**
