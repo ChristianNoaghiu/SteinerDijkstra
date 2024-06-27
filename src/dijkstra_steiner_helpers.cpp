@@ -15,30 +15,27 @@ DijkstraSteiner::TerminalSubset DijkstraSteiner::one_element_terminal_subset(con
  */
 const std::function<bool(const SteinerGraph::NodeId)> DijkstraSteiner::is_in_terminal_subset(const DijkstraSteiner::TerminalSubset &terminal_subset) const
 {
-    return [&terminal_subset = terminal_subset, &terminals = _graph.get_terminals()](const SteinerGraph::NodeId node)
+    return [&terminal_subset = terminal_subset, &graph = _graph](const SteinerGraph::NodeId node)
     {
-        auto terminal_iterator = std::find(terminals.begin(), terminals.end(), node);
-
-        if (terminal_iterator == terminals.end())
+        std::optional<SteinerGraph::TerminalId> terminal_id = graph.find_terminal_id(node);
+        if (!terminal_id.has_value())
         {
             return false;
         }
 
-        const SteinerGraph::TerminalId terminal_id = std::distance(terminals.begin(), terminal_iterator);
-
-        if (static_cast<size_t>(terminal_id) >= terminal_subset.size())
+        if (static_cast<size_t>(terminal_id.value()) >= terminal_subset.size())
         {
             throw std::runtime_error("TerminalId exceeds the size of terminal_subset");
         }
 
-        return terminal_subset[terminal_id] != 0;
+        return terminal_subset[terminal_id.value()] != 0;
     };
 }
 
 /**
  * returns whether subset is a subset of superset
  */
-bool DijkstraSteiner::is_terminal_subset_of(const SteinerGraph::TerminalSubset &subset, const SteinerGraph::TerminalSubset &superset) const
+bool DijkstraSteiner::is_terminal_subset_of(const DijkstraSteiner::TerminalSubset &subset, const DijkstraSteiner::TerminalSubset &superset) const
 {
     for (SteinerGraph::TerminalId i = 0; i < _graph.num_terminals(); i++)
     {
