@@ -1,4 +1,5 @@
 #include "dijkstra_steiner.h"
+#include <limits>
 
 /**
  * returns the bitset-input -1 as a bitset again, for arbitrary bitset length
@@ -6,34 +7,27 @@
  */
 DijkstraSteiner::TerminalSubset DijkstraSteiner::minus_one(const DijkstraSteiner::TerminalSubset &input)
 {
-    int sixtyfour = 64;
-    // if bitset_length is <64 the TerminalSubset below should be all 1's, else only the first 64 bits
-    if (bitset_length < 64)
-    {
-        sixtyfour = bitset_length;
-    }
-    const TerminalSubset twotothesixth_ones = TerminalSubset().set() >> (bitset_length - sixtyfour);
-    const int bitset_length_helper = bitset_length - 64;
+    const TerminalSubset mask = -1ULL;
     TerminalSubset result = 0;
     int i = 0;
-    // iterate through the bitset in 64-bit steps, so we can use to_ullong() to get the 64-bit integer and subtract 1 fast
+    const int width = std::numeric_limits<unsigned long long>::digits;
+    // iterate through the bitset in 64-bit steps (words), so we can use to_ullong() to get the 64-bit integer and subtract 1 fast
     // for that, we need to invert all bits up to the first 1 (it included) of the input
-    while (i <= bitset_length_helper)
+    while (i <= bitset_length)
     {
-        if (!((result >> i) & twotothesixth_ones).any())
+        if (!((result >> i) & mask).any())
         {
-            result ^= twotothesixth_ones << i;
-            i += 64;
+            // input has to be all zeros in this word for this case to happen
+            result ^= mask << i;
+            i += width;
             continue;
         }
-        // if we are here, we have found a first 1 in the current 64-bit block and will use to_ullong for fast subtraction
-        const TerminalSubset temp = (((input >> i) & twotothesixth_ones).to_ullong() - 1) << i;
+        // if we are here, we have found a 1 in the current (<=64-bit) word and will use to_ullong for fast subtraction
+        const TerminalSubset temp = (((input >> i) & mask).to_ullong() - 1) << i;
         result ^= temp;
-        result ^= (input >> (i + 64)) << (i + 64);
-        return result;
+        result ^= (input >> (i + width)) << (i + width); // copy the rest of the input
+        break;
     }
-    // if we are here, we are in the last block of input containing < 64 bits and there has been no 1 in input so far
-    result ^= ((input >> i).to_ullong() - 1) << i;
     return result;
 }
 
