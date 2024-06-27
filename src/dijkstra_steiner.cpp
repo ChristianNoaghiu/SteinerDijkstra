@@ -22,13 +22,6 @@ SteinerGraph DijkstraSteiner::compute_optimal_steiner_tree(const SteinerGraph::N
     return dijkstra_steiner_algorithm(r0, lower_bound, terminals);
 }
 
-DijkstraSteiner::TerminalSubset DijkstraSteiner::minus_one(const DijkstraSteiner::TerminalSubset &input)
-{
-    unsigned long long temp = input.to_ullong();
-    temp = temp - 1;
-    return TerminalSubset(temp);
-}
-
 SteinerGraph DijkstraSteiner::dijkstra_steiner_algorithm(
     const SteinerGraph::NodeId r0,
     const bool lower_bound,
@@ -39,6 +32,11 @@ SteinerGraph DijkstraSteiner::dijkstra_steiner_algorithm(
     if (terminalsubset[r0] && !_graph.get_node(r0).is_terminal())
     {
         throw std::invalid_argument("r0 is either not a terminal or not in the given terminal subset");
+    }
+    // The following check abuses, that is_terminal_subset_of only checks the subset-relation for the bits 0, 1, ..., num_terminals()-1
+    if (!is_terminal_subset_of(terminalsubset, TerminalSubset().set()))
+    {
+        throw std::invalid_argument("The given terminal subset is not a subset of the terminals of the graph");
     }
 
     TerminalSubset terminals_without_r0 = 0; /** @todo const and immediately define after bitset change*/
