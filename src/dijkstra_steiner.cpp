@@ -23,12 +23,7 @@ SteinerGraph DijkstraSteiner::compute_optimal_steiner_tree(const SteinerGraph::N
 
 SteinerGraph DijkstraSteiner::compute_optimal_steiner_tree(const SteinerGraph &graph, const SteinerGraph::NodeId r0, const bool lower_bound_bool)
 {
-    TerminalSubset terminals = 0;
-    for (const SteinerGraph::NodeId &terminal : graph.get_terminals())
-    {
-        terminals.set(terminal);
-    }
-    return dijkstra_steiner_algorithm(graph, r0, lower_bound_bool, terminals);
+    return dijkstra_steiner_algorithm(graph, r0, lower_bound_bool, _all_terminals);
 }
 
 /**
