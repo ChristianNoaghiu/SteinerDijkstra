@@ -2,17 +2,24 @@
 
 #include <iostream>
 #include <vector>
+#include <functional>
 #include <set>
+#include <bitset>
+#include <unordered_map>
+#include <unordered_set>
+#include <optional>
 
 class SteinerGraph
 {
 public:
   using NodeId = int; // vertices are numbered 0,...,num_nodes()-1
+  using EdgeTuple = std::tuple<NodeId, NodeId, int>;
+  using TerminalId = int;
 
   class Neighbor
   {
   public:
-    Neighbor(SteinerGraph::NodeId n, int w);
+    Neighbor(const SteinerGraph::NodeId n, const int w);
     int edge_weight() const;
     SteinerGraph::NodeId id() const;
 
@@ -24,25 +31,38 @@ public:
   class Node
   {
   public:
-    void add_neighbor(SteinerGraph::NodeId nodeid, int weight);
+    void add_neighbor(const SteinerGraph::NodeId nodeid, const int weight);
     const std::vector<Neighbor> &adjacent_nodes() const;
 
     void set_terminal();
+    void set_predecessor(const std::optional<NodeId> predecessor);
+    const std::optional<NodeId> &get_predecessor() const;
     bool is_terminal() const;
 
   private:
     std::vector<Neighbor> _neighbors;
+    std::optional<NodeId> _predecessor = {}; // for MST information
     bool _terminal = false;
   };
 
-  SteinerGraph(NodeId num_nodes);
+  SteinerGraph(const NodeId num_nodes);
   SteinerGraph(char const *filename);
 
   SteinerGraph clear_edges() const;
 
-  void add_nodes(NodeId num_new_nodes);
-  void add_edge(NodeId tail, NodeId head, int weight = 1);
-  void make_terminal(NodeId new_terminal);
+  void add_nodes(const NodeId num_new_nodes);
+  void add_edge(const NodeId tail, const NodeId head, const int weight = 1);
+  void make_terminal(const NodeId new_terminal);
+  void set_predecessor(const NodeId node_id, const std::optional<NodeId> predecessor);
+  void make_directed();
+
+  struct allDijkstraPathsStruct
+  {
+    NodeId furthest_node;
+    std::vector<int> distances;
+    std::vector<std::vector<std::pair<std::optional<NodeId>, int>>> predecessors;
+  };
+  allDijkstraPathsStruct all_dijkstra_paths(const NodeId start_node) const;
 
   struct DijkstraStruct
   {
@@ -59,38 +79,75 @@ public:
     std::vector<std::vector<int>> predecessor_weight_matrix;
   };
   MetricClosureStruct metric_closure() const;
+  SteinerGraph metric_closure_graph(
+      const std::vector<std::vector<int>> metric_closure_distance_matrix)
+      const;
 
   std::optional<NodeId> find_terminal_node() const;
 
   SteinerGraph steiner_tree_mst_approximation() const;
 
+  SteinerGraph subgraph_mst(
+      const std::function<bool(const NodeId node)> is_in_subgraph)
+      const;
+  SteinerGraph subgraph_mst(
+      const std::function<bool(const NodeId node)> is_in_subgraph,
+      const NodeId start_node)
+      const;
   SteinerGraph component_mst(const NodeId start_node) const;
 
   NodeId num_nodes() const;
-  const Node &get_node(NodeId) const;
+  TerminalId num_terminals() const;
+  const Node &get_node(const NodeId node) const;
+  const std::vector<NodeId> &get_terminals() const;
+  int edge_weight_sum() const;
   void print() const;
+  void print_weight() const;
+
+  std::optional<TerminalId> find_terminal_id(const NodeId node) const;
 
   static const int infinite_weight;
   static const int infinite_distance;
 
-private:
+  void check_valid_node(const NodeId node) const;
+  void check_valid_terminal(const TerminalId node) const;
+
   void check_connected_metric_closure(
       const std::vector<std::vector<int>> &metric_closure_distance_matrix)
       const;
 
-  std::vector<std::optional<NodeId>> terminal_rooted_mst_predecessors(
-      const std::vector<std::vector<int>> &metric_closure_distance_matrix)
-      const;
+  unsigned int edge_count(NodeId head, NodeId tail, int weight) const;
 
+private:
   void add_path_to_steiner_tree_mst_approximation(
       const NodeId &start_node,
       const std::vector<std::vector<std::optional<NodeId>>> &metric_closure_predecessor_matrix,
       const std::vector<std::vector<int>> &metric_closure_predecessor_weight_matrix,
-      const std::vector<std::optional<NodeId>> &mst_predecessors,
+      const SteinerGraph &mst_graph,
       std::vector<bool> &visited,
       SteinerGraph &result_graph)
       const;
 
+  struct EdgeHash
+  {
+    std::size_t operator()(const EdgeTuple &edge) const;
+  };
+  bool _is_directed;
   std::vector<Node> _nodes;
-  std::set<NodeId> _terminals;
+  std::vector<NodeId> _terminals;
+  std::unordered_multiset<EdgeTuple, EdgeHash> _edges;
+
+  // for queues in Dijkstra's and Prim's algorithms
+  using NodeDistancePair = std::pair<SteinerGraph::NodeId, int>;
+  static std::function<bool(
+      const NodeDistancePair,
+      const NodeDistancePair)>
+  node_distance_pair_compare();
+  static std::function<bool(
+      const EdgeTuple,
+      const EdgeTuple)>
+  edge_tuple_compare();
+
+  const std::function<bool(const SteinerGraph::NodeId)> is_in_graph() const;
+  const std::function<bool(const SteinerGraph::NodeId)> is_terminal() const;
 };
