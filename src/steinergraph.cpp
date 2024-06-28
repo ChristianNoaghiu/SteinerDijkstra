@@ -43,6 +43,11 @@ void SteinerGraph::set_predecessor(const NodeId node_id, const std::optional<Nod
    _nodes.at(node_id).set_predecessor(predecessor);
 }
 
+void SteinerGraph::make_directed()
+{
+   _is_directed = true;
+}
+
 void SteinerGraph::Node::set_terminal()
 {
    _terminal = true;
@@ -60,7 +65,7 @@ const std::optional<SteinerGraph::NodeId> &SteinerGraph::Node::get_predecessor()
 
 SteinerGraph::Neighbor::Neighbor(const SteinerGraph::NodeId n, const int w) : _id(n), _edge_weight(w) {}
 
-SteinerGraph::SteinerGraph(const NodeId num) : _nodes(num) {}
+SteinerGraph::SteinerGraph(const NodeId num) : _is_directed(false), _nodes(num) {}
 
 // returns a graph with the same nodes and terminals,
 // but without edges
@@ -83,7 +88,10 @@ void SteinerGraph::add_edge(const NodeId tail, const NodeId head, const int weig
       throw std::runtime_error("Edge cannot be added due to undefined endpoint.");
    }
    _nodes[tail].add_neighbor(head, weight);
-   _nodes[head].add_neighbor(tail, weight);
+   if (!_is_directed)
+   {
+      _nodes[head].add_neighbor(tail, weight);
+   }
 }
 
 void SteinerGraph::Node::add_neighbor(const SteinerGraph::NodeId nodeid, const int weight)

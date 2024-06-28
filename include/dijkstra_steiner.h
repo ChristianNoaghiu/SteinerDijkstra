@@ -24,6 +24,7 @@ public:
 
 private:
     SteinerGraph _graph;
+    TerminalSubset _all_terminals;
 
     // for dynamic distance computations
     std::vector<std::vector<int>> _distance_matrix;
@@ -50,7 +51,10 @@ private:
     using LabelKey = std::pair<SteinerGraph::NodeId, TerminalSubset>;
     using WeightedLabelKey = std::pair<double, LabelKey>;
     using LabelKeyToDoubleMap = std::unordered_map<LabelKey, double, PairHash<SteinerGraph::NodeId, TerminalSubset>>;
+    using LabelKeyToIntMap = std::unordered_map<LabelKey, int, PairHash<SteinerGraph::NodeId, TerminalSubset>>;
     using LabelKeyToWeightedLabelKeyVectorMap = std::unordered_map<LabelKey, std::vector<WeightedLabelKey>, PairHash<SteinerGraph::NodeId, TerminalSubset>>;
+    using DetourLabelKey = std::tuple<int, SteinerGraph::NodeId, TerminalSubset>;
+    using DetourLabelKeyToLabelKeyVectorVectorMap = std::unordered_map<DetourLabelKey, std::vector<std::vector<LabelKey>>, TripleHash<int, SteinerGraph::NodeId, TerminalSubset>>;
     using LabelKeySet = std::unordered_set<LabelKey, PairHash<SteinerGraph::NodeId, TerminalSubset>>;
 
     struct CompareWeightedLabelKey
@@ -139,5 +143,41 @@ private:
         const SteinerGraph &graph,
         const SteinerGraph::TerminalId r0,
         const bool lower_bound,
-        const TerminalSubset &terminals);
+        const TerminalSubset &terminalsubset);
+
+    struct TopologyStruct
+    {
+        SteinerGraph topology;
+        std::vector<bool> existent_nodes;
+        std::vector<std::pair<SteinerGraph::NodeId, SteinerGraph::NodeId>> existent_edges;
+        int detour;
+    };
+
+    double compute_compare_bound(
+        LabelKeyToIntMap &labels,
+        const SteinerGraph::NodeId node,
+        const TerminalSubset &terminal_subset,
+        const SteinerGraph::TerminalId r0);
+    std::vector<TopologyStruct> get_topologies(
+        const SteinerGraph &graph,
+        const SteinerGraph::TerminalId r0,
+        const TerminalSubset &terminalsubset,
+        const int max_detour);
+
+    std::vector<TopologyStruct> enumerate_topologies_one_element_terminal_subset(
+        const SteinerGraph::NodeId node,
+        const TerminalSubset &terminal_subset);
+
+    SteinerGraph compute_backtracking_graph(
+        const SteinerGraph::NodeId node,
+        const TerminalSubset &terminal_subset,
+        const int max_detour,
+        DetourLabelKeyToLabelKeyVectorVectorMap &backtrack_data);
+
+    std::vector<TopologyStruct> enumerate_topologies(
+        const SteinerGraph::NodeId node,
+        const TerminalSubset &terminal_subset,
+        const int zeta,
+        const int max_detour,
+        DetourLabelKeyToLabelKeyVectorVectorMap &backtrack_data);
 };
