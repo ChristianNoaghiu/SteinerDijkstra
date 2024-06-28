@@ -40,6 +40,7 @@ private:
 
     // for dynamic distance computations
     std::vector<std::vector<int>> _distance_matrix;
+    SteinerGraph _metric_closure_graph_result;
     bool _computed_distance_matrix = false;
     void compute_distances_and_check_connected();
     int get_or_compute_distance(const SteinerGraph::NodeId node1, const SteinerGraph::NodeId node2);

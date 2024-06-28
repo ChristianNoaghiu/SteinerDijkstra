@@ -8,16 +8,15 @@
 #include <unordered_map>
 #include <vector>
 
-DijkstraSteiner::DijkstraSteiner(const SteinerGraph &graph) : _graph(graph)
+DijkstraSteiner::DijkstraSteiner(const SteinerGraph &graph) : _graph(graph), _metric_closure_graph_result(graph.num_nodes())
 {
     for (SteinerGraph::TerminalId terminal = 0; terminal < graph.num_terminals(); terminal++)
     {
         _all_terminals.set(terminal);
     }
-    // check if graph is connected
-    const SteinerGraph::MetricClosureStruct metric_closure_result = _graph.metric_closure();
-    const std::vector<std::vector<int>> &distance_matrix = metric_closure_result.distance_matrix;
-    _graph.check_connected_metric_closure(distance_matrix);
+    // check if the graph is connected and compute metric closure
+    compute_distances_and_check_connected();
+    _metric_closure_graph_result = _graph.metric_closure_graph(_distance_matrix);
 }
 
 SteinerGraph DijkstraSteiner::compute_optimal_steiner_tree(const SteinerGraph::NodeId r0, const bool lower_bound_bool)
@@ -106,8 +105,10 @@ SteinerGraph DijkstraSteiner::dijkstra_steiner_algorithm(
     terminals_with_r0.set(r0_terminal_id); // having this in the declaration as terminals_without_r0.set(...) would alter terminals_without_r0
     const LabelKey final_permanent_label = make_pair(r0, terminals_without_r0);
     // main loop doing all the work
+    int l = 0;
     while (!permanent_labels.count(final_permanent_label))
     {
+        const auto start = std::chrono::high_resolution_clock::now();
         if (non_permanent_labels.empty())
         {
             throw std::runtime_error("No path found");
@@ -130,7 +131,8 @@ SteinerGraph DijkstraSteiner::dijkstra_steiner_algorithm(
                     labels[neighbor_label] = current_label_value + edge_weight;
                     backtrack_data[neighbor_label] = {std::make_pair(edge_weight, current_label)};
                     TerminalSubset bound_input_1 = terminals_with_r0 ^ current_terminal_subset;
-                    non_permanent_labels.push(std::make_pair((current_label_value + edge_weight + bound(r0, lower_bound_bool, current_node, bound_input_1)), neighbor_label)); // Alle Elemente aus non_permanent_labels haben die Distanz !inklusive lower_bound-Wert! als Vergleichswert
+                    const double bound_value = bound(r0, lower_bound_bool, current_node, bound_input_1);
+                    non_permanent_labels.push(std::make_pair((current_label_value + edge_weight + bound_value), neighbor_label)); // Alle Elemente aus non_permanent_labels haben die Distanz !inklusive lower_bound-Wert! als Vergleichswert
                 }
             }
         }
@@ -150,11 +152,15 @@ SteinerGraph DijkstraSteiner::dijkstra_steiner_algorithm(
                         labels[union_label_key] = current_label_value + labels[v_J_label_key];
                         backtrack_data[union_label_key] = {std::make_pair(SteinerGraph::infinite_distance, current_label), std::make_pair(SteinerGraph::infinite_distance, v_J_label_key)};
                         TerminalSubset bound_input_2 = terminals_with_r0 ^ union_label_key.second;
-                        non_permanent_labels.push(std::make_pair(current_label_value + labels[v_J_label_key] + bound(r0, lower_bound_bool, current_node, bound_input_2), union_label_key));
+                        const double bound_value = bound(r0, lower_bound_bool, current_node, bound_input_2);
+                        non_permanent_labels.push(std::make_pair(current_label_value + labels[v_J_label_key] + bound_value, union_label_key));
                     }
                 }
             }
         }
+        const auto end = std::chrono::high_resolution_clock::now();
+        l++;
+        std::cout << "Iteration " << l << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms" << std::endl;
     }
     std::vector<EdgeTuple> edge_vector = backtrack(backtrack_data, final_permanent_label);
     SteinerGraph result_graph = graph.clear_edges();
