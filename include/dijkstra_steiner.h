@@ -26,6 +26,12 @@ public:
     /** @todo fix this being in public */
     using TerminalSubset = std::bitset<bitset_length>;
 
+    /** @todo remove this */
+    void test_j_terminal_bound();
+    void test_enumerate_topologies_one_element_terminal_subset();
+    void test_get_topologies();
+    void test_is_tree();
+
 private:
     SteinerGraph _graph;
     TerminalSubset _all_terminals;
@@ -153,7 +159,7 @@ private:
     {
         SteinerGraph topology;
         std::vector<bool> existent_nodes;
-        std::vector<std::pair<SteinerGraph::NodeId, SteinerGraph::NodeId>> existent_edges;
+        std::vector<SteinerGraph::EdgeTuple> existent_edges;
         int detour;
     };
 
@@ -163,11 +169,11 @@ private:
         const TerminalSubset &terminal_subset,
         const SteinerGraph::NodeId r0);
     std::vector<TopologyStruct> get_topologies(
-        const SteinerGraph &graph,
         const SteinerGraph::NodeId r0,
         const TerminalSubset &terminalsubset,
         const int max_detour);
 
+    // tested
     std::vector<TopologyStruct> enumerate_topologies_one_element_terminal_subset(
         const SteinerGraph::NodeId node,
         const TerminalSubset &terminal_subset);
