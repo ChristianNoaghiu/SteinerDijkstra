@@ -16,19 +16,19 @@ DijkstraSteiner::DijkstraSteiner(const SteinerGraph &graph) : _graph(graph)
     }
 }
 
-SteinerGraph DijkstraSteiner::compute_optimal_steiner_tree(const SteinerGraph::TerminalId r0, const bool lower_bound)
+SteinerGraph DijkstraSteiner::compute_optimal_steiner_tree(const SteinerGraph::NodeId r0, const bool lower_bound_bool)
 {
-    return compute_optimal_steiner_tree(_graph, r0, lower_bound);
+    return compute_optimal_steiner_tree(_graph, r0, lower_bound_bool);
 }
 
-SteinerGraph DijkstraSteiner::compute_optimal_steiner_tree(const SteinerGraph &graph, const SteinerGraph::NodeId r0, const bool lower_bound)
+SteinerGraph DijkstraSteiner::compute_optimal_steiner_tree(const SteinerGraph &graph, const SteinerGraph::NodeId r0, const bool lower_bound_bool)
 {
     TerminalSubset terminals = 0;
     for (const SteinerGraph::NodeId &terminal : graph.get_terminals())
     {
         terminals.set(terminal);
     }
-    return dijkstra_steiner_algorithm(graph, r0, lower_bound, terminals);
+    return dijkstra_steiner_algorithm(graph, r0, lower_bound_bool, terminals);
 }
 
 /**
@@ -42,9 +42,9 @@ SteinerGraph DijkstraSteiner::dijkstra_steiner_algorithm(
 {
 
     // check if r0 is in the given terminal subset and a terminal
-    if (!graph.get_node(r0).is_terminal() && terminalsubset[r0])
+    if (!graph.get_node(r0).is_terminal())
     {
-        throw std::invalid_argument("r0 is either not a terminal or not in the given terminal subset");
+        throw std::invalid_argument("r0 is not a terminal");
     }
     // The following check abuses, that is_terminal_subset_of only checks the subset-relation for the bits 0, 1, ..., num_terminals()-1
     if (!is_terminal_subset_of(terminalsubset, TerminalSubset().set()))
@@ -52,7 +52,7 @@ SteinerGraph DijkstraSteiner::dijkstra_steiner_algorithm(
         throw std::invalid_argument("The given terminal subset is not a subset of the terminals of the graph");
     }
     SteinerGraph::TerminalId r0_terminal_id;
-    TerminalSubset terminals_without_r0 = 0; /** @todo const and immediately define after bitset change - no, since */
+    TerminalSubset terminals_without_r0 = 0;
     // labels definition
     LabelKeyToIntMap labels;
     // backtrack definition
@@ -66,13 +66,13 @@ SteinerGraph DijkstraSteiner::dijkstra_steiner_algorithm(
     for (SteinerGraph::TerminalId terminal_id = 0; terminal_id < graph.num_terminals(); terminal_id++)
     {
         const SteinerGraph::NodeId terminal_node_id = graph.get_terminals().at(terminal_id);
-        if (terminalsubset[terminal_id])
-        {
-            continue;
-        }
         if (terminal_node_id == r0)
         {
             r0_terminal_id = terminal_id;
+            continue;
+        }
+        if (!terminalsubset[terminal_id])
+        {
             continue;
         }
         const LabelKey terminal_label = std::make_pair(terminal_node_id, (TerminalSubset(1) << terminal_id));
@@ -81,6 +81,10 @@ SteinerGraph DijkstraSteiner::dijkstra_steiner_algorithm(
         terminals_without_r0.set(terminal_id);
     }
     // there is no need to initialize labelskeys with empty TerminalSubsets, since they won't appear in N (non_permanent_labels)
+    if (!terminalsubset[r0_terminal_id])
+    {
+        throw std::invalid_argument("r0 is not in the terminalsubset");
+    }
 
     TerminalSubset terminals_with_r0 = terminals_without_r0;
     terminals_with_r0.set(r0_terminal_id); // having this in the declaration as terminals_without_r0.set(...) would alter terminals_without_r0

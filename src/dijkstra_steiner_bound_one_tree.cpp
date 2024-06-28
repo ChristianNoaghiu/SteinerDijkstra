@@ -9,7 +9,7 @@
 double DijkstraSteiner::get_or_compute_one_tree_bound(
     const SteinerGraph::NodeId node,
     const DijkstraSteiner::TerminalSubset &terminal_subset,
-    const SteinerGraph::TerminalId r0)
+    const SteinerGraph::NodeId r0)
 {
     // check validity of parameters
     _graph.check_valid_node(node);

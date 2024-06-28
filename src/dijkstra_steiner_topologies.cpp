@@ -7,7 +7,7 @@ double DijkstraSteiner::compute_compare_bound(
     DijkstraSteiner::LabelKeyToIntMap &labels,
     const SteinerGraph::NodeId node,
     const DijkstraSteiner::TerminalSubset &terminal_subset,
-    const SteinerGraph::TerminalId r0)
+    const SteinerGraph::NodeId r0)
 {
     const LabelKey label_key = std::make_pair(node, terminal_subset);
     if (!labels.count(label_key))
@@ -19,22 +19,22 @@ double DijkstraSteiner::compute_compare_bound(
 
 std::vector<DijkstraSteiner::TopologyStruct> DijkstraSteiner::get_topologies(
     const SteinerGraph &graph,
-    const SteinerGraph::TerminalId r0,
+    const SteinerGraph::NodeId r0,
     const DijkstraSteiner::TerminalSubset &terminalsubset,
     const int max_detour)
 {
     // check if r0 is in the given terminal subset and a terminal
-    if (!graph.get_node(r0).is_terminal() && terminalsubset[r0])
+    if (!graph.get_node(r0).is_terminal())
     {
-        throw std::invalid_argument("r0 is either not a terminal or not in the given terminal subset");
+        throw std::invalid_argument("r0 is not a terminal");
     }
 
-    TerminalSubset terminals_without_r0 = 0; /** @todo const and immediately define after bitset change*/
+    SteinerGraph::TerminalId r0_terminal_id = -1;
+    TerminalSubset terminals_without_r0 = 0;
     // labels definition
     LabelKeyToIntMap labels;
     // backtrack definition
     DetourLabelKeyToLabelKeyVectorVectorMap backtrack_data;
-
     // permanent_labels definition (P)
     LabelKeySet permanent_labels;
 
@@ -44,11 +44,21 @@ std::vector<DijkstraSteiner::TopologyStruct> DijkstraSteiner::get_topologies(
         const SteinerGraph::NodeId terminal_node_id = graph.get_terminals().at(terminal_id);
         if (terminal_node_id == r0)
         {
+            r0_terminal_id = terminal_id;
+            continue;
+        }
+        if (!terminalsubset[terminal_id])
+        {
             continue;
         }
         const LabelKey terminal_label = std::make_pair(terminal_node_id, (TerminalSubset(1) << terminal_id));
         labels[terminal_label] = 0;
         terminals_without_r0.set(terminal_id);
+    }
+
+    if (!terminalsubset[r0_terminal_id])
+    {
+        throw std::invalid_argument("r0 is not in the terminalsubset");
     }
 
     std::priority_queue<WeightedLabelKey, std::vector<WeightedLabelKey>, CompareWeightedLabelKey> non_permanent_labels;
@@ -277,17 +287,17 @@ bool DijkstraSteiner::is_tree(const DijkstraSteiner::TopologyStruct &topology_st
         throw std::invalid_argument("Topology is empty");
     }
 
-    SteinerGraph::NodeId start_node = start_node_optional.value();
+    const SteinerGraph::NodeId start_node = start_node_optional.value();
     std::vector<bool> visited(topology.num_nodes(), false);
     std::queue<SteinerGraph::NodeId> queue;
     queue.push(start_node);
 
-    int counted_edges = 0;
+    unsigned int counted_edges = 0;
 
     // check if the topology is connected via BFS
     while (!queue.empty())
     {
-        SteinerGraph::NodeId current_node = queue.front();
+        const SteinerGraph::NodeId current_node = queue.front();
         queue.pop();
 
         // check if current_node really exists
@@ -300,7 +310,7 @@ bool DijkstraSteiner::is_tree(const DijkstraSteiner::TopologyStruct &topology_st
 
         for (const SteinerGraph::Neighbor &neighbor : topology.get_node(current_node).adjacent_nodes())
         {
-            SteinerGraph::NodeId neighbor_id = neighbor.id();
+            const SteinerGraph::NodeId neighbor_id = neighbor.id();
             if (!existent_nodes.at(neighbor_id))
             {
                 continue;
