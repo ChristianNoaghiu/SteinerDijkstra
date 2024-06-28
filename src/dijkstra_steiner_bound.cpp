@@ -3,7 +3,7 @@
 #include <bitset>
 
 double DijkstraSteiner::bound(
-    const SteinerGraph::TerminalId r0,
+    const SteinerGraph::NodeId r0,
     const bool lower_bound,
     const SteinerGraph::NodeId node,
     const DijkstraSteiner::TerminalSubset &terminal_subset)

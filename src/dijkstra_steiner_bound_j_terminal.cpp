@@ -13,7 +13,7 @@ int smt(__attribute__((unused)) DijkstraSteiner::TerminalSubset terminal_subset)
  */
 double DijkstraSteiner::get_or_compute_j_terminal_bound(
     const int j,
-    const SteinerGraph::TerminalId r0,
+    const SteinerGraph::NodeId r0,
     const SteinerGraph::NodeId node,
     const DijkstraSteiner::TerminalSubset &terminal_subset)
 {

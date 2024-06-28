@@ -21,7 +21,7 @@ public:
     DijkstraSteiner(const SteinerGraph &graph);
     // wrapper for the dijkstra_steiner_algorithm with all terminals
     SteinerGraph compute_optimal_steiner_tree(const SteinerGraph::NodeId r0, const bool lower_bound);
-    SteinerGraph compute_optimal_steiner_tree(const SteinerGraph &graph, const SteinerGraph::TerminalId r0, const bool lower_bound);
+    SteinerGraph compute_optimal_steiner_tree(const SteinerGraph &graph, const SteinerGraph::NodeId r0, const bool lower_bound);
 
     /** @todo fix this being in public */
     using TerminalSubset = std::bitset<bitset_length>;
@@ -52,12 +52,12 @@ private:
     using EdgeTuple = std::tuple<SteinerGraph::NodeId, SteinerGraph::NodeId, int>;
     using LabelKey = std::pair<SteinerGraph::NodeId, TerminalSubset>;
     using WeightedLabelKey = std::pair<double, LabelKey>;
-    using LabelKeyToDoubleMap = std::unordered_map<LabelKey, double, PairHash<SteinerGraph::NodeId, TerminalSubset>>;
-    using LabelKeyToIntMap = std::unordered_map<LabelKey, int, PairHash<SteinerGraph::NodeId, TerminalSubset>>;
-    using LabelKeyToWeightedLabelKeyVectorMap = std::unordered_map<LabelKey, std::vector<WeightedLabelKey>, PairHash<SteinerGraph::NodeId, TerminalSubset>>;
+    using LabelKeyToDoubleMap = std::unordered_map<LabelKey, double, PairHash>;
+    using LabelKeyToIntMap = std::unordered_map<LabelKey, int, PairHash>;
+    using LabelKeyToWeightedLabelKeyVectorMap = std::unordered_map<LabelKey, std::vector<WeightedLabelKey>, PairHash>;
     using DetourLabelKey = std::tuple<int, SteinerGraph::NodeId, TerminalSubset>;
-    using DetourLabelKeyToLabelKeyVectorVectorMap = std::unordered_map<DetourLabelKey, std::vector<std::vector<LabelKey>>, TripleHash<int, SteinerGraph::NodeId, TerminalSubset>>;
-    using LabelKeySet = std::unordered_set<LabelKey, PairHash<SteinerGraph::NodeId, TerminalSubset>>;
+    using DetourLabelKeyToLabelKeyVectorVectorMap = std::unordered_map<DetourLabelKey, std::vector<std::vector<LabelKey>>, TripleHash>;
+    using LabelKeySet = std::unordered_set<LabelKey, PairHash>;
 
     struct CompareWeightedLabelKey
     {
@@ -85,7 +85,7 @@ private:
     LabelKeyToDoubleMap _computed_j_terminal_bounds;
     double get_or_compute_j_terminal_bound(
         const int j,
-        const SteinerGraph::TerminalId r0,
+        const SteinerGraph::NodeId r0,
         const SteinerGraph::TerminalId node,
         const TerminalSubset &terminal_subset);
 
@@ -101,7 +101,7 @@ private:
     double get_or_compute_one_tree_bound(
         const SteinerGraph::NodeId node,
         const TerminalSubset &terminal_subset,
-        const SteinerGraph::TerminalId r0);
+        const SteinerGraph::NodeId r0);
 
     /** @todo check if all functions are really used */
     // tsp bound
@@ -124,7 +124,7 @@ private:
 
     // total bound
     double bound(
-        const SteinerGraph::TerminalId r0,
+        const SteinerGraph::NodeId r0,
         const bool lower_bound,
         const SteinerGraph::NodeId node,
         const TerminalSubset &R_without_I);
@@ -143,7 +143,7 @@ private:
     TerminalSubset minus_one(const TerminalSubset &input) const;
     SteinerGraph dijkstra_steiner_algorithm(
         const SteinerGraph &graph,
-        const SteinerGraph::TerminalId r0,
+        const SteinerGraph::NodeId r0,
         const bool lower_bound,
         const TerminalSubset &terminalsubset);
 
@@ -159,10 +159,10 @@ private:
         LabelKeyToIntMap &labels,
         const SteinerGraph::NodeId node,
         const TerminalSubset &terminal_subset,
-        const SteinerGraph::TerminalId r0);
+        const SteinerGraph::NodeId r0);
     std::vector<TopologyStruct> get_topologies(
         const SteinerGraph &graph,
-        const SteinerGraph::TerminalId r0,
+        const SteinerGraph::NodeId r0,
         const TerminalSubset &terminalsubset,
         const int max_detour);
 
