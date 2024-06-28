@@ -33,7 +33,7 @@ SteinerGraph DijkstraSteiner::compute_optimal_steiner_tree(const SteinerGraph &g
 SteinerGraph DijkstraSteiner::dijkstra_steiner_algorithm(
     const SteinerGraph &graph,
     const SteinerGraph::TerminalId r0,
-    const bool lower_bound,
+    const bool lower_bound_bool,
     const DijkstraSteiner::TerminalSubset &terminalsubset) // terminalsubset is a bitset, we need this for the bound using this algorithm on a terminal-subset
 {
 
@@ -47,8 +47,8 @@ SteinerGraph DijkstraSteiner::dijkstra_steiner_algorithm(
     {
         throw std::invalid_argument("The given terminal subset is not a subset of the terminals of the graph");
     }
-
-    TerminalSubset terminals_without_r0 = 0; /** @todo const and immediately define after bitset change*/
+    SteinerGraph::TerminalId r0_terminal_id;
+    TerminalSubset terminals_without_r0 = 0; /** @todo const and immediately define after bitset change - no, since */
     // labels definition
     LabelKeyToDoubleMap labels;
     // backtrack definition
@@ -62,8 +62,13 @@ SteinerGraph DijkstraSteiner::dijkstra_steiner_algorithm(
     for (SteinerGraph::TerminalId terminal_id = 0; terminal_id < graph.num_terminals(); terminal_id++)
     {
         const SteinerGraph::NodeId terminal_node_id = graph.get_terminals().at(terminal_id);
+        if (terminalsubset[terminal_id])
+        {
+            continue;
+        }
         if (terminal_node_id == r0)
         {
+            r0_terminal_id = terminal_id;
             continue;
         }
         const LabelKey terminal_label = std::make_pair(terminal_node_id, (TerminalSubset(1) << terminal_id));
@@ -71,8 +76,10 @@ SteinerGraph DijkstraSteiner::dijkstra_steiner_algorithm(
         non_permanent_labels.push(std::make_pair(0, terminal_label));
         terminals_without_r0.set(terminal_id);
     }
-    // no need to initialize labelskeys with empty TerminalSubsets, since they won't appear in N (non_permanent_labels)
+    // there is no need to initialize labelskeys with empty TerminalSubsets, since they won't appear in N (non_permanent_labels)
 
+    TerminalSubset terminals_with_r0 = terminals_without_r0;
+    terminals_with_r0.set(r0_terminal_id); // having this in the declaration as terminals_without_r0.set(...) would alter terminals_without_r0
     const LabelKey final_permanent_label = make_pair(r0, terminals_without_r0);
     // main loop doing all the work
     while (!permanent_labels.count(final_permanent_label))
@@ -94,9 +101,8 @@ SteinerGraph DijkstraSteiner::dijkstra_steiner_algorithm(
                 {
                     labels[neighbor_label] = current_label_value + edge_weight;
                     backtrack_data[neighbor_label] = {std::make_pair(edge_weight, current_label)};
-                    TerminalSubset bound_input_1 = terminals_without_r0 ^ current_terminal_subset;
-                    bound_input_1.set(r0);                                                                                                                                /** @todo const this after bitset change */
-                    non_permanent_labels.push(std::make_pair((current_label_value + edge_weight + bound(r0, lower_bound, current_node, bound_input_1)), neighbor_label)); // Alle Elemente aus non_permanent_labels haben die Distanz !inklusive lower_bound-Wert! als Vergleichswert
+                    TerminalSubset bound_input_1 = terminals_with_r0 ^ current_terminal_subset;
+                    non_permanent_labels.push(std::make_pair((current_label_value + edge_weight + bound(r0_terminal_id, lower_bound_bool, current_node, bound_input_1)), neighbor_label)); // Alle Elemente aus non_permanent_labels haben die Distanz !inklusive lower_bound-Wert! als Vergleichswert
                 }
             }
         }
@@ -104,20 +110,19 @@ SteinerGraph DijkstraSteiner::dijkstra_steiner_algorithm(
         TerminalSubset R_r0_without_I = terminals_without_r0 ^ current_terminal_subset;
         for (TerminalSubset J = R_r0_without_I; J.any(); J = minus_one(J) & R_r0_without_I) // Iterieren through all non-empty subsets J of (R \ {r_0}) \ I
         {
-            LabelKey v_J_label = std::make_pair(current_node, J);
-            if (permanent_labels.count(v_J_label)) // prüft ob (v, J) \elem P
+            LabelKey v_J_label_key = std::make_pair(current_node, J);
+            if (permanent_labels.count(v_J_label_key)) // prüft ob (v, J) \elem P
             {
-                LabelKey union_label = std::make_pair(current_node, J | current_terminal_subset);
-                if (!permanent_labels.count(union_label)) // prüft ob (v, J u I) \notelem P
+                LabelKey union_label_key = std::make_pair(current_node, J | current_terminal_subset);
+                if (!permanent_labels.count(union_label_key)) // prüft ob (v, J u I) \notelem P
                 {
                     // it is known, that there is a labelvalue for (v, I) and (v, J), it is not necessarily given for (v, J u I)
-                    if (!labels.count(union_label) || current_label_value + labels[v_J_label] < labels[union_label]) // If (v, J u I)  doesn't have a labelvalue the "||" ensures that, since the first part of the statement is true, the second part is not evaluated
+                    if (!labels.count(union_label_key) || current_label_value + labels[v_J_label_key] < labels[union_label_key]) // If (v, J u I)  doesn't have a labelvalue the "||" ensures that, since the first part of the statement is true, the second part is not evaluated
                     {
-                        labels[union_label] = current_label_value + labels[v_J_label];
-                        backtrack_data[union_label] = {std::make_pair(SteinerGraph::infinite_distance, current_label), std::make_pair(SteinerGraph::infinite_distance, v_J_label)};
-                        TerminalSubset bound_input_2 = terminals_without_r0 ^ union_label.second;
-                        bound_input_2.set(r0); /** @todo const this after bitset change */
-                        non_permanent_labels.push(std::make_pair(current_label_value + labels[v_J_label] + bound(r0, lower_bound, current_node, bound_input_2), union_label));
+                        labels[union_label_key] = current_label_value + labels[v_J_label_key];
+                        backtrack_data[union_label_key] = {std::make_pair(SteinerGraph::infinite_distance, current_label), std::make_pair(SteinerGraph::infinite_distance, v_J_label_key)};
+                        TerminalSubset bound_input_2 = terminals_with_r0 ^ union_label_key.second;
+                        non_permanent_labels.push(std::make_pair(current_label_value + labels[v_J_label_key] + bound(r0_terminal_id, lower_bound_bool, current_node, bound_input_2), union_label_key));
                     }
                 }
             }
