@@ -1,6 +1,7 @@
 #include "dijkstra_steiner.h"
 #include <vector>
 #include <queue>
+#include <optional>
 
 double DijkstraSteiner::compute_compare_bound(
     DijkstraSteiner::LabelKeyToIntMap &labels,
@@ -250,6 +251,86 @@ SteinerGraph DijkstraSteiner::compute_backtracking_graph(
     return backtracking_graph;
 }
 
+/**
+ * checks if the given topology is a tree
+ */
+bool DijkstraSteiner::is_tree(const DijkstraSteiner::TopologyStruct &topology_struct) const
+{
+    const SteinerGraph &topology = topology_struct.topology;
+    const std::vector<bool> &existent_nodes = topology_struct.existent_nodes;
+
+    // find a start node (or throw an error if none exists)
+    std::optional<SteinerGraph::NodeId> start_node_optional;
+    for (SteinerGraph::NodeId node = 0; node < _graph.num_nodes(); node++)
+    {
+        if (!existent_nodes.at(node))
+        {
+            continue;
+        }
+
+        start_node_optional = node;
+        break;
+    }
+
+    if (!start_node_optional.has_value())
+    {
+        throw std::invalid_argument("Topology is empty");
+    }
+
+    SteinerGraph::NodeId start_node = start_node_optional.value();
+    std::vector<bool> visited(topology.num_nodes(), false);
+    std::queue<SteinerGraph::NodeId> queue;
+    queue.push(start_node);
+
+    int counted_edges = 0;
+
+    // check if the topology is connected via BFS
+    while (!queue.empty())
+    {
+        SteinerGraph::NodeId current_node = queue.front();
+        queue.pop();
+
+        // check if current_node really exists
+        if (!existent_nodes.at(current_node))
+        {
+            throw std::runtime_error("Topology contains non-existent node");
+        }
+
+        visited.at(current_node) = true;
+
+        for (const SteinerGraph::Neighbor &neighbor : topology.get_node(current_node).adjacent_nodes())
+        {
+            SteinerGraph::NodeId neighbor_id = neighbor.id();
+            if (!existent_nodes.at(neighbor_id))
+            {
+                continue;
+            }
+
+            // the graph contains a cycle if a node is visited twice
+            if (visited.at(neighbor_id))
+            {
+                return false;
+            }
+
+            counted_edges++;
+            queue.push(neighbor_id);
+        }
+    }
+
+    // check if all edges have been counted
+    if (counted_edges != topology_struct.existent_edges.size())
+    {
+        return false;
+    }
+    // if yes, then the graph consists of exactly one connected component
+    // which doesn't contain a cycle, therefore it is a tree
+
+    return true;
+}
+
+/**
+ * enumerate_topologies as in the paper
+ */
 std::vector<DijkstraSteiner::TopologyStruct> DijkstraSteiner::enumerate_topologies(
     const SteinerGraph::NodeId node,
     const TerminalSubset &terminal_subset,
@@ -331,9 +412,11 @@ std::vector<DijkstraSteiner::TopologyStruct> DijkstraSteiner::enumerate_topologi
                             existent_edges.push_back({node, reachable_node_id});
                         }
 
-                        if (true)
+                        const int new_zeta = reachable_node_zeta + zeta_part + topology1.detour + topology2.detour;
+                        const TopologyStruct new_topology_struct = {new_topology, existent_nodes, existent_edges, new_zeta};
+
+                        if (is_tree(new_topology_struct))
                         {
-                            const TopologyStruct new_topology_struct = {new_topology, existent_nodes, existent_edges, reachable_node_zeta + zeta_part + topology1.detour + topology2.detour};
                             result.push_back(new_topology_struct);
                         }
                     }

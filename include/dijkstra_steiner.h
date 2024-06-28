@@ -176,6 +176,8 @@ private:
         const int max_detour,
         DetourLabelKeyToLabelKeyVectorVectorMap &backtrack_data);
 
+    bool is_tree(const TopologyStruct &topology_struct) const;
+
     std::vector<TopologyStruct> enumerate_topologies(
         const SteinerGraph::NodeId node,
         const TerminalSubset &terminal_subset,
