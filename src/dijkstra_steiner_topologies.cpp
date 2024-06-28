@@ -14,17 +14,30 @@ double DijkstraSteiner::compute_compare_bound(
     {
         return std::numeric_limits<double>::infinity();
     }
-    return labels[label_key] + bound(r0, true, node, _all_terminals ^ terminal_subset);
+
+    double label = labels[label_key];
+    double complement_bound = bound(r0, true, node, _all_terminals ^ terminal_subset);
+    return label + complement_bound;
+}
+
+void DijkstraSteiner::test_get_topologies()
+{
+    std::cout << get_or_compute_distance(0, 1) << std::endl;
+    DijkstraSteiner::TerminalSubset terminal_subset = 0b111;
+    std::vector<DijkstraSteiner::TopologyStruct> topologies = get_topologies(0, terminal_subset, 2);
+    for (const DijkstraSteiner::TopologyStruct &topology : topologies)
+    {
+        topology.topology.print();
+    }
 }
 
 std::vector<DijkstraSteiner::TopologyStruct> DijkstraSteiner::get_topologies(
-    const SteinerGraph &graph,
     const SteinerGraph::NodeId r0,
     const DijkstraSteiner::TerminalSubset &terminalsubset,
     const int max_detour)
 {
     // check if r0 is in the given terminal subset and a terminal
-    if (!graph.get_node(r0).is_terminal())
+    if (!_graph.get_node(r0).is_terminal())
     {
         throw std::invalid_argument("r0 is not a terminal");
     }
@@ -39,9 +52,9 @@ std::vector<DijkstraSteiner::TopologyStruct> DijkstraSteiner::get_topologies(
     LabelKeySet permanent_labels;
 
     // initialization
-    for (SteinerGraph::TerminalId terminal_id = 0; terminal_id < graph.num_terminals(); terminal_id++)
+    for (SteinerGraph::TerminalId terminal_id = 0; terminal_id < _graph.num_terminals(); terminal_id++)
     {
-        const SteinerGraph::NodeId terminal_node_id = graph.get_terminals().at(terminal_id);
+        const SteinerGraph::NodeId terminal_node_id = _graph.get_terminals().at(terminal_id);
         if (terminal_node_id == r0)
         {
             r0_terminal_id = terminal_id;
@@ -64,12 +77,11 @@ std::vector<DijkstraSteiner::TopologyStruct> DijkstraSteiner::get_topologies(
     std::priority_queue<WeightedLabelKey, std::vector<WeightedLabelKey>, CompareWeightedLabelKey> non_permanent_labels;
 
     // insert all (v, I) with I nonempty and not containing r0 into the priority queue
-    for (SteinerGraph::NodeId node = 0; node < graph.num_nodes(); node++)
+    for (SteinerGraph::NodeId node = 0; node < _graph.num_nodes(); node++)
     {
-        for (unsigned long long terminal_subset_ullong = 1; terminal_subset_ullong < (1ULL << graph.num_terminals()); terminal_subset_ullong++)
+        for (TerminalSubset terminal_subset = _all_terminals; terminal_subset.any(); terminal_subset = minus_one(terminal_subset))
         {
-            const TerminalSubset terminal_subset(terminal_subset_ullong);
-            if (terminal_subset[r0] == 1)
+            if (terminal_subset[r0_terminal_id] == 1)
             {
                 continue;
             }
@@ -95,7 +107,7 @@ std::vector<DijkstraSteiner::TopologyStruct> DijkstraSteiner::get_topologies(
         const SteinerGraph::NodeId current_node = current_label.first;
         const TerminalSubset current_terminal_subset = current_label.second;
 
-        for (const SteinerGraph::Neighbor &neighbor : graph.get_node(current_node).adjacent_nodes()) // Iterieren über die von v ausgehenden Kanten
+        for (const SteinerGraph::Neighbor &neighbor : _graph.get_node(current_node).adjacent_nodes()) // Iterieren über die von v ausgehenden Kanten
         {
             const SteinerGraph::NodeId neighbor_id = neighbor.id();                               // second node of the edge
             const double edge_weight = neighbor.edge_weight();                                    // edge weight
@@ -148,7 +160,7 @@ std::vector<DijkstraSteiner::TopologyStruct> DijkstraSteiner::get_topologies(
             continue;
         }
 
-        for (const SteinerGraph::Neighbor &neighbor : graph.get_node(current_node).adjacent_nodes())
+        for (const SteinerGraph::Neighbor &neighbor : _graph.get_node(current_node).adjacent_nodes())
         {
             const SteinerGraph::NodeId neighbor_id = neighbor.id(); // second node of the edge
             const double edge_weight = neighbor.edge_weight();      // edge weight
@@ -162,8 +174,14 @@ std::vector<DijkstraSteiner::TopologyStruct> DijkstraSteiner::get_topologies(
             }
         }
 
+        // iterate over all nonempety J that are proper subsets of I
         for (TerminalSubset terminal_subset_j = current_terminal_subset; terminal_subset_j.any(); terminal_subset_j = minus_one(terminal_subset_j) & current_terminal_subset)
         {
+            if (terminal_subset_j == current_terminal_subset)
+            {
+                continue;
+            }
+
             LabelKey v_J_label = std::make_pair(current_node, terminal_subset_j);
             if (labels[v_J_label] == std::numeric_limits<double>::max())
             {
@@ -184,10 +202,18 @@ std::vector<DijkstraSteiner::TopologyStruct> DijkstraSteiner::get_topologies(
     return enumerate_topologies(r0, terminals_without_r0, max_detour, max_detour, backtrack_data);
 }
 
+/**
+ * returns the enumeration of topologies for a terminal subset containing exactly one terminal
+ */
 std::vector<DijkstraSteiner::TopologyStruct> DijkstraSteiner::enumerate_topologies_one_element_terminal_subset(
     const SteinerGraph::NodeId node,
     const TerminalSubset &terminal_subset)
 {
+    if (terminal_subset.count() != 1)
+    {
+        throw std::invalid_argument("Terminal subset must contain exactly one terminal");
+    }
+
     for (SteinerGraph::TerminalId terminal_id = 0; terminal_id < _graph.num_terminals(); terminal_id++)
     {
         if (!terminal_subset[terminal_id])
@@ -199,7 +225,7 @@ std::vector<DijkstraSteiner::TopologyStruct> DijkstraSteiner::enumerate_topologi
 
         SteinerGraph result_graph = _graph.clear_edges();
         std::vector<bool> existent_nodes(_graph.num_nodes(), false);
-        std::vector<std::pair<SteinerGraph::NodeId, SteinerGraph::NodeId>> existent_edges;
+        std::vector<EdgeTuple> existent_edges;
 
         if (terminal_node == node)
         {
@@ -210,7 +236,7 @@ std::vector<DijkstraSteiner::TopologyStruct> DijkstraSteiner::enumerate_topologi
             result_graph.add_edge(node, terminal_node);
             existent_nodes[node] = true;
             existent_nodes[terminal_node] = true;
-            existent_edges.push_back({node, terminal_node});
+            existent_edges.push_back({node, terminal_node, get_or_compute_distance(node, terminal_node)});
         }
 
         const TopologyStruct topology = {result_graph, existent_nodes, existent_edges, 0};
@@ -218,6 +244,13 @@ std::vector<DijkstraSteiner::TopologyStruct> DijkstraSteiner::enumerate_topologi
     }
 
     throw std::invalid_argument("Invalid terminal_subset");
+}
+
+/** @todo remove this */
+void DijkstraSteiner::test_enumerate_topologies_one_element_terminal_subset()
+{
+    auto topologies = enumerate_topologies_one_element_terminal_subset(3, 0b010);
+    std::cout << "Enumerate topologies for one element terminal subset" << std::endl;
 }
 
 SteinerGraph DijkstraSteiner::compute_backtracking_graph(
@@ -289,6 +322,7 @@ bool DijkstraSteiner::is_tree(const DijkstraSteiner::TopologyStruct &topology_st
 
     const SteinerGraph::NodeId start_node = start_node_optional.value();
     std::vector<bool> visited(topology.num_nodes(), false);
+    std::vector<std::optional<SteinerGraph::NodeId>> predecessors(topology.num_nodes(), std::nullopt);
     std::queue<SteinerGraph::NodeId> queue;
     queue.push(start_node);
 
@@ -306,12 +340,17 @@ bool DijkstraSteiner::is_tree(const DijkstraSteiner::TopologyStruct &topology_st
             throw std::runtime_error("Topology contains non-existent node");
         }
 
+        if (visited.at(current_node))
+        {
+            return false;
+        }
+
         visited.at(current_node) = true;
 
         for (const SteinerGraph::Neighbor &neighbor : topology.get_node(current_node).adjacent_nodes())
         {
             const SteinerGraph::NodeId neighbor_id = neighbor.id();
-            if (!existent_nodes.at(neighbor_id))
+            if (!existent_nodes.at(neighbor_id) || neighbor_id == predecessors.at(current_node))
             {
                 continue;
             }
@@ -324,6 +363,7 @@ bool DijkstraSteiner::is_tree(const DijkstraSteiner::TopologyStruct &topology_st
 
             counted_edges++;
             queue.push(neighbor_id);
+            predecessors.at(neighbor_id) = current_node;
         }
     }
 
@@ -336,6 +376,27 @@ bool DijkstraSteiner::is_tree(const DijkstraSteiner::TopologyStruct &topology_st
     // which doesn't contain a cycle, therefore it is a tree
 
     return true;
+}
+
+/** @todo remove this */
+void DijkstraSteiner::test_is_tree()
+{
+    SteinerGraph graph(4);
+    graph.add_edge(0, 1);
+    graph.add_edge(1, 2);
+
+    std::vector<bool> existent_nodes = {true, true, true, false};
+    std::vector<EdgeTuple> existent_edges = {{0, 1, 3}, {1, 2, 5}};
+    DijkstraSteiner::TopologyStruct topology_struct = {graph, existent_nodes, existent_edges, 0};
+
+    if (is_tree(topology_struct))
+    {
+        std::cout << "Topology is a tree" << std::endl;
+    }
+    else
+    {
+        std::cout << "Topology is not a tree" << std::endl;
+    }
 }
 
 /**
@@ -354,15 +415,14 @@ std::vector<DijkstraSteiner::TopologyStruct> DijkstraSteiner::enumerate_topologi
     }
 
     SteinerGraph backtracking_graph = compute_backtracking_graph(node, terminal_subset, max_detour, backtrack_data);
-    const SteinerGraph::MetricClosureStruct backtracking_graph_metric_closure = backtracking_graph.metric_closure();
-    const std::vector<std::vector<int>> &distance_matrix = backtracking_graph_metric_closure.distance_matrix;
 
     std::vector<std::pair<SteinerGraph::NodeId, int>> reachable_nodes;
     for (SteinerGraph::NodeId i = 0; i < backtracking_graph.num_nodes(); i++)
     {
-        if (distance_matrix.at(node).at(i) <= zeta)
+        int distance_to_i = get_or_compute_distance(node, i);
+        if (distance_to_i <= zeta)
         {
-            reachable_nodes.push_back(std::make_pair(i, distance_matrix.at(node).at(i)));
+            reachable_nodes.push_back(std::make_pair(i, distance_to_i));
         }
     }
 
@@ -401,25 +461,33 @@ std::vector<DijkstraSteiner::TopologyStruct> DijkstraSteiner::enumerate_topologi
 
                         SteinerGraph new_topology = _graph.clear_edges();
                         std::vector<bool> existent_nodes(_graph.num_nodes(), false);
-                        std::vector<std::pair<SteinerGraph::NodeId, SteinerGraph::NodeId>> existent_edges;
+                        std::vector<EdgeTuple> existent_edges;
                         existent_nodes[node] = true;
 
-                        for (const std::pair<SteinerGraph::NodeId, SteinerGraph::NodeId> &edge : topology1.existent_edges)
+                        for (SteinerGraph::NodeId node = 0; node < _graph.num_nodes(); node++)
                         {
-                            new_topology.add_edge(edge.first, edge.second);
+                            if (topology1.existent_nodes.at(node) || topology2.existent_nodes.at(node))
+                            {
+                                existent_nodes[node] = true;
+                            }
+                        }
+
+                        for (const EdgeTuple &edge : topology1.existent_edges)
+                        {
+                            new_topology.add_edge(std::get<0>(edge), std::get<1>(edge), std::get<2>(edge));
                             existent_edges.push_back(edge);
                         }
 
-                        for (const std::pair<SteinerGraph::NodeId, SteinerGraph::NodeId> &edge : topology2.existent_edges)
+                        for (const EdgeTuple &edge : topology2.existent_edges)
                         {
-                            new_topology.add_edge(edge.first, edge.second);
+                            new_topology.add_edge(std::get<0>(edge), std::get<1>(edge), std::get<2>(edge));
                             existent_edges.push_back(edge);
                         }
 
                         if (node != reachable_node_id)
                         {
                             new_topology.add_edge(node, reachable_node_id);
-                            existent_edges.push_back({node, reachable_node_id});
+                            existent_edges.push_back({node, reachable_node_id, reachable_node_zeta});
                         }
 
                         const int new_zeta = reachable_node_zeta + zeta_part + topology1.detour + topology2.detour;
