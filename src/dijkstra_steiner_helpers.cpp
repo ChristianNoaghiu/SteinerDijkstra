@@ -6,7 +6,7 @@
  * use: go through all subsets of a given bitset by subtracting 1 from the bitset until it is 0
  */
 
-DijkstraSteiner::TerminalSubset DijkstraSteiner::minus_one(const DijkstraSteiner::TerminalSubset &input)
+DijkstraSteiner::TerminalSubset DijkstraSteiner::minus_one(const DijkstraSteiner::TerminalSubset &input) const
 {
     if (input.none())
     {
