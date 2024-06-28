@@ -33,7 +33,13 @@ double DijkstraSteiner::get_or_compute_j_terminal_bound(
         throw std::runtime_error("j value does not match with previous computations");
     }
 
-    if (!_graph.get_node(r0).is_terminal() || !terminal_subset[r0])
+    if (!_graph.get_node(r0).is_terminal())
+    {
+        throw std::runtime_error("r0 must be a terminal");
+    }
+
+    SteinerGraph::TerminalId r0_terminal_id = _graph.find_terminal_id(r0).value();
+    if (terminal_subset[r0_terminal_id] == 0)
     {
         return 0;
     }
@@ -52,7 +58,7 @@ double DijkstraSteiner::get_or_compute_j_terminal_bound(
         for (TerminalSubset terminal_subset_J : _terminal_subsets_of_size.at(subset_size))
         {
             // r0 must be in J
-            if (terminal_subset_J[r0] == 0)
+            if (terminal_subset_J[r0_terminal_id] == 0)
             {
                 continue;
             }
@@ -63,10 +69,8 @@ double DijkstraSteiner::get_or_compute_j_terminal_bound(
                 continue;
             }
 
-            SteinerGraph::NodeId r0_node_id = _graph.get_terminals().at(r0);
-
             // compute the SMT without v
-            int smt_without_node = dijkstra_steiner_algorithm(_graph, r0_node_id, false, terminal_subset_J).edge_weight_sum();
+            int smt_without_node = dijkstra_steiner_algorithm(_graph, r0, false, terminal_subset_J).edge_weight_sum();
             if (smt_without_node > result)
             {
                 result = smt_without_node;
@@ -91,7 +95,7 @@ double DijkstraSteiner::get_or_compute_j_terminal_bound(
             terminal_subset_J_with_node[node_terminal_id] = 1;
 
             // compute the SMT with v
-            int smt_with_node = dijkstra_steiner_algorithm(graph_with_node_as_terminal, r0_node_id, false, terminal_subset_J_with_node).edge_weight_sum();
+            int smt_with_node = dijkstra_steiner_algorithm(graph_with_node_as_terminal, r0, false, terminal_subset_J_with_node).edge_weight_sum();
             if (smt_with_node > result)
             {
                 result = smt_with_node;

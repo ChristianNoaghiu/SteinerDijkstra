@@ -19,9 +19,9 @@ double DijkstraSteiner::get_or_compute_one_tree_bound(
     {
         throw std::runtime_error("r0 exceeds the size of terminal_subset");
     }
-
+    SteinerGraph::TerminalId r0_terminal_id = _graph.find_terminal_id(r0).value();
     // second case of one-tree bound definition
-    if (terminal_subset[r0] == 0)
+    if (terminal_subset[r0_terminal_id] == 0)
     {
         return 0.0;
     }
