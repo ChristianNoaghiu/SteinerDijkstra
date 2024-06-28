@@ -21,6 +21,8 @@ public:
     DijkstraSteiner(const SteinerGraph &graph);
     // wrapper for the dijkstra_steiner_algorithm with all terminals
     SteinerGraph compute_optimal_steiner_tree(const SteinerGraph::NodeId r0, const bool lower_bound);
+    SteinerGraph compute_optimal_steiner_tree(const SteinerGraph &graph, const SteinerGraph::TerminalId r0, const bool lower_bound);
+
     /** @todo fix this being in public */
     using TerminalSubset = std::bitset<bitset_length>;
 
@@ -79,7 +81,8 @@ private:
     LabelKeyToDoubleMap _computed_j_terminal_bounds;
     double get_or_compute_j_terminal_bound(
         const int j,
-        const SteinerGraph::NodeId node,
+        const SteinerGraph::TerminalId r0,
+        const SteinerGraph::TerminalId node,
         const TerminalSubset &terminal_subset);
 
     // one-tree bound
@@ -116,7 +119,11 @@ private:
         const TerminalSubset &terminal_subset);
 
     // total bound
-    double bound(const bool lower_bound, const SteinerGraph::NodeId node, const TerminalSubset &R_without_I);
+    double bound(
+        const SteinerGraph::TerminalId r0,
+        const bool lower_bound,
+        const SteinerGraph::NodeId node,
+        const TerminalSubset &R_without_I);
 
     // Dijkstra-Steiner algorithm
     std::vector<EdgeTuple> backtrack(
@@ -129,6 +136,10 @@ private:
     void test_tsp_bound();
 
     // helper function for loop in dijkstra_steiner_algorithm
-    TerminalSubset minus_one(const TerminalSubset &input);
-    SteinerGraph dijkstra_steiner_algorithm(const SteinerGraph::NodeId r0, const bool lower_bound, const TerminalSubset &terminals);
+    TerminalSubset minus_one(const TerminalSubset &input) const;
+    SteinerGraph dijkstra_steiner_algorithm(
+        const SteinerGraph &graph,
+        const SteinerGraph::TerminalId r0,
+        const bool lower_bound,
+        const TerminalSubset &terminals);
 };

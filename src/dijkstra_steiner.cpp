@@ -12,24 +12,34 @@ DijkstraSteiner::DijkstraSteiner(const SteinerGraph &graph) : _graph(graph) {}
 #include <unordered_map>
 #include <vector>
 
+
 SteinerGraph DijkstraSteiner::compute_optimal_steiner_tree(const SteinerGraph::NodeId r0, const bool lower_bound_bool)
 {
+    return compute_optimal_steiner_tree(_graph, r0, lower_bound);
+}
+
+SteinerGraph DijkstraSteiner::compute_optimal_steiner_tree(const SteinerGraph &graph, const SteinerGraph::NodeId r0, const bool lower_bound_bool)
+{
     TerminalSubset terminals = 0;
-    for (const SteinerGraph::NodeId &terminal : _graph.get_terminals())
+    for (const SteinerGraph::NodeId &terminal : graph.get_terminals())
     {
         terminals.set(terminal);
     }
-    return dijkstra_steiner_algorithm(r0, lower_bound_bool, terminals);
+    return dijkstra_steiner_algorithm(graph, r0, lower_bound, terminals);
 }
 
+/**
+ * computes a optimal Steiner tree on a given graph using the Dijkstra-Steiner algorithm
+ */
 SteinerGraph DijkstraSteiner::dijkstra_steiner_algorithm(
+    const SteinerGraph &graph,
     const SteinerGraph::NodeId r0,
     const bool lower_bound_bool,
     const DijkstraSteiner::TerminalSubset &terminalsubset) // terminalsubset is a bitset, we need this for the bound using this algorithm on a terminal-subset
 {
 
     // check if r0 is in the given terminal subset and a terminal
-    if (terminalsubset[r0] && !_graph.get_node(r0).is_terminal())
+    if (!graph.get_node(r0).is_terminal() && terminalsubset[r0])
     {
         throw std::invalid_argument("r0 is either not a terminal or not in the given terminal subset");
     }
@@ -50,9 +60,9 @@ SteinerGraph DijkstraSteiner::dijkstra_steiner_algorithm(
     LabelKeySet permanent_labels;
 
     // initialization
-    for (SteinerGraph::TerminalId terminal_id = 0; terminal_id < _graph.num_terminals(); terminal_id++)
+    for (SteinerGraph::TerminalId terminal_id = 0; terminal_id < graph.num_terminals(); terminal_id++)
     {
-        const SteinerGraph::NodeId terminal_node_id = _graph.get_terminals().at(terminal_id);
+        const SteinerGraph::NodeId terminal_node_id = graph.get_terminals().at(terminal_id);
         if (terminalsubset[terminal_id])
         {
             continue;
@@ -81,7 +91,7 @@ SteinerGraph DijkstraSteiner::dijkstra_steiner_algorithm(
         double current_label_value = labels[current_label];
         const SteinerGraph::NodeId current_node = current_label.first;
         const TerminalSubset current_terminal_subset = current_label.second;
-        for (const SteinerGraph::Neighbor &neighbor : _graph.get_node(current_node).adjacent_nodes()) // Iterieren über die von v ausgehenden Kanten
+        for (const SteinerGraph::Neighbor &neighbor : graph.get_node(current_node).adjacent_nodes()) // Iterieren über die von v ausgehenden Kanten
         {
             const SteinerGraph::NodeId neighbor_id = neighbor.id();                               // second node of the edge
             const double edge_weight = neighbor.edge_weight();                                    // edge weight
@@ -93,7 +103,7 @@ SteinerGraph DijkstraSteiner::dijkstra_steiner_algorithm(
                     labels[neighbor_label] = current_label_value + edge_weight;
                     backtrack_data[neighbor_label] = {std::make_pair(edge_weight, current_label)};
                     TerminalSubset bound_input_1 = terminals_with_r0 ^ current_terminal_subset;
-                    non_permanent_labels.push(std::make_pair((current_label_value + edge_weight + bound(lower_bound_bool, current_node, bound_input_1)), neighbor_label)); // Alle Elemente aus non_permanent_labels haben die Distanz !inklusive lower_bound-Wert! als Vergleichswert
+                    non_permanent_labels.push(std::make_pair((current_label_value + edge_weight + bound(r0_terminal_id, lower_bound_bool, current_node, bound_input_1)), neighbor_label)); // Alle Elemente aus non_permanent_labels haben die Distanz !inklusive lower_bound-Wert! als Vergleichswert
                 }
             }
         }
@@ -113,14 +123,14 @@ SteinerGraph DijkstraSteiner::dijkstra_steiner_algorithm(
                         labels[union_label_key] = current_label_value + labels[v_J_label_key];
                         backtrack_data[union_label_key] = {std::make_pair(SteinerGraph::infinite_distance, current_label), std::make_pair(SteinerGraph::infinite_distance, v_J_label_key)};
                         TerminalSubset bound_input_2 = terminals_with_r0 ^ union_label_key.second;
-                        non_permanent_labels.push(std::make_pair(current_label_value + labels[v_J_label_key] + bound(lower_bound_bool, current_node, bound_input_2), union_label_key));
+                        non_permanent_labels.push(std::make_pair(current_label_value + labels[v_J_label_key] + bound(r0_terminal_id, lower_bound_bool, current_node, bound_input_2), union_label_key));
                     }
                 }
             }
         }
     }
     std::vector<EdgeTuple> edge_vector = backtrack(backtrack_data, final_permanent_label);
-    SteinerGraph result_graph = _graph.clear_edges();
+    SteinerGraph result_graph = graph.clear_edges();
     for (EdgeTuple &edge : edge_vector)
     {
         result_graph.add_edge(std::get<0>(edge), std::get<1>(edge), std::get<2>(edge));

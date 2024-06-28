@@ -191,6 +191,19 @@ void SteinerGraph::print() const
    std::cout << "\nSum of edge weights: " << edge_weight_sum() << "\n";
 }
 
+std::optional<SteinerGraph::TerminalId> SteinerGraph::find_terminal_id(const SteinerGraph::NodeId node) const
+{
+   for (TerminalId terminal_id = 0; terminal_id < num_terminals(); terminal_id++)
+   {
+      if (get_terminals().at(terminal_id) == node)
+      {
+         return terminal_id;
+      }
+   }
+
+   return std::nullopt;
+}
+
 void SteinerGraph::check_valid_node(const NodeId node) const
 {
    if (node < 0 || node >= num_nodes())
