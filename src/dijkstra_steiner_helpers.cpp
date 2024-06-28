@@ -1,4 +1,40 @@
 #include "dijkstra_steiner.h"
+#include <limits>
+
+/**
+ * returns the bitset-input -1 as a bitset again, for arbitrary bitset length
+ * use: go through all subsets of a given bitset by subtracting 1 from the bitset until it is 0
+ */
+
+DijkstraSteiner::TerminalSubset DijkstraSteiner::minus_one(const DijkstraSteiner::TerminalSubset &input)
+{
+    if (input.none())
+    {
+        throw std::invalid_argument("input is 0, so we cannot subtract");
+    }
+    const TerminalSubset mask = -1ULL;
+    TerminalSubset result = 0;
+    int i = 0;
+    const int width = std::numeric_limits<unsigned long long>::digits;
+    // iterate in 64-bit steps (words) and use to_ullong() for 64-bit integer and fast subtraction - means bits need to be set to 1 until the first word with 1 is found
+    while (i < bitset_length)
+    {
+        if ((input & (mask << i)).none())
+        {
+            result ^= mask << i;
+            i += width;
+            continue;
+        }
+        // found 1, use to_ullong() for fast -1
+        const TerminalSubset temp = (((input >> i) & mask).to_ullong() - 1);
+        result ^= temp << i; // I hope this is faster then doing it manually with __builtin_ctzl
+        // insert rest of input
+        const TerminalSubset temp2 = (input & (mask << (i + width)));
+        result ^= temp2;
+        break;
+    }
+    return result;
+}
 
 /**
  * returns a TerminalSubset containing exactly the given terminal
@@ -50,24 +86,18 @@ bool DijkstraSteiner::is_terminal_subset_of(const DijkstraSteiner::TerminalSubse
 /**
  * hash function for a map of pairs
  */
-template <typename T, typename U>
-std::size_t DijkstraSteiner::PairHash<T, U>::operator()(const std::pair<T, U> &x) const
+std::size_t DijkstraSteiner::PairHash::operator()(const std::pair<SteinerGraph::NodeId, DijkstraSteiner::TerminalSubset> &x) const
 {
-    return std::hash<T>()(x.first) ^ std::hash<U>()(x.second.to_ullong());
+    return std::hash<SteinerGraph::NodeId>()(x.first) ^ std::hash<DijkstraSteiner::TerminalSubset>()(x.second);
 }
 
 /**
  * hash function for a map of 3-tuples
  */
-template <typename T, typename U, typename V>
-::std::size_t DijkstraSteiner::TripleHash<T, U, V>::operator()(const std::tuple<T, U, V> &x) const
+::std::size_t DijkstraSteiner::TripleHash::operator()(const std::tuple<SteinerGraph::TerminalId, SteinerGraph::TerminalId, DijkstraSteiner::TerminalSubset> &x) const
 {
-    return std::hash<T>()(std::get<0>(x)) ^ std::hash<U>()(std::get<1>(x)) ^ std::hash<V>()(std::get<2>(x).to_ullong());
+    return std::hash<SteinerGraph::TerminalId>()(std::get<0>(x)) ^ std::hash<SteinerGraph::TerminalId>()(std::get<1>(x)) ^ std::hash<DijkstraSteiner::TerminalSubset>()(std::get<2>(x));
 }
-
-// Explicit instantiation of the used template structs
-template struct DijkstraSteiner::PairHash<SteinerGraph::NodeId, DijkstraSteiner::TerminalSubset>;
-template struct DijkstraSteiner::TripleHash<SteinerGraph::TerminalId, SteinerGraph::TerminalId, DijkstraSteiner::TerminalSubset>;
 
 /**
  * comparison function for a priority queue of weighted label keys

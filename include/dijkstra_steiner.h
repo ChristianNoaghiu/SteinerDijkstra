@@ -14,13 +14,17 @@
 
 class DijkstraSteiner
 {
+private:
+    static constexpr int bitset_length = 64; // minimum length required is 64
+
 public:
-    /** @todo fix this */
-    using TerminalSubset = std::bitset<64>;
     DijkstraSteiner(const SteinerGraph &graph);
     // wrapper for the dijkstra_steiner_algorithm with all terminals
-    SteinerGraph compute_optimal_steiner_tree(const SteinerGraph::TerminalId r0, const bool lower_bound);
+    SteinerGraph compute_optimal_steiner_tree(const SteinerGraph::NodeId r0, const bool lower_bound);
     SteinerGraph compute_optimal_steiner_tree(const SteinerGraph &graph, const SteinerGraph::TerminalId r0, const bool lower_bound);
+
+    /** @todo fix this being in public */
+    using TerminalSubset = std::bitset<bitset_length>;
 
 private:
     SteinerGraph _graph;
@@ -33,17 +37,15 @@ private:
     int get_or_compute_distance(const SteinerGraph::NodeId node1, const SteinerGraph::NodeId node2);
 
     // helper types
-    template <typename T, typename U>
     struct PairHash
     {
     public:
-        std::size_t operator()(const std::pair<T, U> &x) const;
+        std::size_t operator()(const std::pair<SteinerGraph::NodeId, TerminalSubset> &x) const;
     };
-    template <typename T, typename U, typename V>
     struct TripleHash
     {
     public:
-        std::size_t operator()(const std::tuple<T, U, V> &x) const;
+        std::size_t operator()(const std::tuple<SteinerGraph::TerminalId, SteinerGraph::TerminalId, DijkstraSteiner::TerminalSubset> &x) const;
     };
     /** @todo fix this */
     // using TerminalSubset = std::bitset<64>;
@@ -107,7 +109,7 @@ private:
     using HamiltonianPathKeyToDoubleMap = std::unordered_map<
         HamiltonianPathKey,
         double,
-        TripleHash<SteinerGraph::TerminalId, SteinerGraph::TerminalId, TerminalSubset>>;
+        TripleHash>;
 
     HamiltonianPathKeyToDoubleMap _hamiltonian_paths;
     double get_hamiltonian_path(const HamiltonianPathKey &key) const;
