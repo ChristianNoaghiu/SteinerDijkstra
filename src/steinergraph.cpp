@@ -159,9 +159,9 @@ int SteinerGraph::edge_weight_sum() const
 {
    int result = 0;
 
-   for (auto nodeid = 0; nodeid < num_nodes(); ++nodeid)
+   for (NodeId nodeid = 0; nodeid < num_nodes(); ++nodeid)
    {
-      for (auto neighbor : get_node(nodeid).adjacent_nodes())
+      for (const Neighbor neighbor : get_node(nodeid).adjacent_nodes())
       {
          if (neighbor.id() > nodeid) // ensures that edge are counted only once
          {
@@ -171,6 +171,11 @@ int SteinerGraph::edge_weight_sum() const
    }
 
    return result;
+}
+
+void SteinerGraph::print_weight() const
+{
+   std::cout << "The total weight of the edges in the graph is: " << edge_weight_sum() << std::endl;
 }
 
 void SteinerGraph::print() const
@@ -237,9 +242,5 @@ void SteinerGraph::check_valid_terminal(const TerminalId terminal) const
    if (terminal < 0 || terminal >= num_terminals())
    {
       throw std::runtime_error("Invalid TerminalId.");
-   }
-   if (terminal >= 64)
-   {
-      throw std::runtime_error("TerminalId exceeds the size of TerminalSubset.");
    }
 }

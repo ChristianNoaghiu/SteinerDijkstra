@@ -14,10 +14,25 @@ DijkstraSteiner::DijkstraSteiner(const SteinerGraph &graph) : _graph(graph)
     {
         _all_terminals.set(terminal);
     }
+    // check if graph is connected
+    const SteinerGraph::MetricClosureStruct metric_closure_result = _graph.metric_closure();
+    const std::vector<std::vector<int>> &distance_matrix = metric_closure_result.distance_matrix;
+    _graph.check_connected_metric_closure(distance_matrix);
 }
 
 SteinerGraph DijkstraSteiner::compute_optimal_steiner_tree(const SteinerGraph::NodeId r0, const bool lower_bound_bool)
 {
+    if (lower_bound_bool)
+    {
+        // initialize terminal_subsets_of_size
+        // it is needed for the bound computation
+        // terminal_subsets_of_size.at(n) stores all terminal subsets of size n
+        _terminal_subsets_of_size.resize(_graph.num_terminals() + 1);
+        for (TerminalSubset terminal_subset_runner = _all_terminals; terminal_subset_runner.any(); terminal_subset_runner = minus_one(terminal_subset_runner)) //  Die "Lauf-variable" läuft alle subsets ab
+        {
+            _terminal_subsets_of_size.at(terminal_subset_runner.count()).push_back(terminal_subset_runner);
+        }
+    }
     return compute_optimal_steiner_tree(_graph, r0, lower_bound_bool);
 }
 
@@ -76,9 +91,15 @@ SteinerGraph DijkstraSteiner::dijkstra_steiner_algorithm(
         terminals_without_r0.set(terminal_id);
     }
     // there is no need to initialize labelskeys with empty TerminalSubsets, since they won't appear in N (non_permanent_labels)
+
     if (!terminalsubset[r0_terminal_id])
     {
         throw std::invalid_argument("r0 is not in the terminalsubset");
+    }
+
+    if (terminalsubset.count() == 1)
+    {
+        return _graph.clear_edges();
     }
 
     TerminalSubset terminals_with_r0 = terminals_without_r0;
@@ -87,6 +108,10 @@ SteinerGraph DijkstraSteiner::dijkstra_steiner_algorithm(
     // main loop doing all the work
     while (!permanent_labels.count(final_permanent_label))
     {
+        if (non_permanent_labels.empty())
+        {
+            throw std::runtime_error("No path found");
+        }
         LabelKey current_label = non_permanent_labels.top().second; // (v, I) of the priority-queue-element (pq ordered by lowest distance)
         non_permanent_labels.pop();
         permanent_labels.insert(current_label);
@@ -105,7 +130,7 @@ SteinerGraph DijkstraSteiner::dijkstra_steiner_algorithm(
                     labels[neighbor_label] = current_label_value + edge_weight;
                     backtrack_data[neighbor_label] = {std::make_pair(edge_weight, current_label)};
                     TerminalSubset bound_input_1 = terminals_with_r0 ^ current_terminal_subset;
-                    non_permanent_labels.push(std::make_pair((current_label_value + edge_weight + bound(r0_terminal_id, lower_bound_bool, current_node, bound_input_1)), neighbor_label)); // Alle Elemente aus non_permanent_labels haben die Distanz !inklusive lower_bound-Wert! als Vergleichswert
+                    non_permanent_labels.push(std::make_pair((current_label_value + edge_weight + bound(r0, lower_bound_bool, current_node, bound_input_1)), neighbor_label)); // Alle Elemente aus non_permanent_labels haben die Distanz !inklusive lower_bound-Wert! als Vergleichswert
                 }
             }
         }
@@ -125,7 +150,7 @@ SteinerGraph DijkstraSteiner::dijkstra_steiner_algorithm(
                         labels[union_label_key] = current_label_value + labels[v_J_label_key];
                         backtrack_data[union_label_key] = {std::make_pair(SteinerGraph::infinite_distance, current_label), std::make_pair(SteinerGraph::infinite_distance, v_J_label_key)};
                         TerminalSubset bound_input_2 = terminals_with_r0 ^ union_label_key.second;
-                        non_permanent_labels.push(std::make_pair(current_label_value + labels[v_J_label_key] + bound(r0_terminal_id, lower_bound_bool, current_node, bound_input_2), union_label_key));
+                        non_permanent_labels.push(std::make_pair(current_label_value + labels[v_J_label_key] + bound(r0, lower_bound_bool, current_node, bound_input_2), union_label_key));
                     }
                 }
             }

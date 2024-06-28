@@ -33,7 +33,13 @@ double DijkstraSteiner::get_or_compute_j_terminal_bound(
         throw std::runtime_error("j value does not match with previous computations");
     }
 
-    if (!_graph.get_node(r0).is_terminal() || !terminal_subset[r0])
+    if (!_graph.get_node(r0).is_terminal())
+    {
+        throw std::runtime_error("r0 must be a terminal");
+    }
+
+    SteinerGraph::TerminalId r0_terminal_id = _graph.find_terminal_id(r0).value();
+    if (terminal_subset[r0_terminal_id] == 0)
     {
         return 0;
     }
@@ -45,27 +51,14 @@ double DijkstraSteiner::get_or_compute_j_terminal_bound(
         return _computed_j_terminal_bounds[label_key];
     }
 
-    /** @todo outsource this to avoid duplicate code */
-    // terminal_subsets_of_size.at(n) stores all ullongs of terminal subsets of size n
-    std::vector<std::vector<unsigned long long>> terminal_subsets_of_size(_graph.num_terminals() + 1);
-
-    /** @todo what if num_terminals exceeds 64? Or is exactly 64? */
-    for (unsigned long long terminal_subset_ullong = 0; terminal_subset_ullong < (1ULL << _graph.num_terminals()); terminal_subset_ullong++)
-    {
-        terminal_subsets_of_size.at(TerminalSubset(terminal_subset_ullong).count()).push_back(terminal_subset_ullong);
-    }
-
     int result = 0;
 
-    for (int subset_size = 1; subset_size <= j + 1; subset_size++)
+    for (int subset_size = 1; subset_size <= std::min(j + 1, _graph.num_terminals()); subset_size++)
     {
-        for (unsigned long long terminal_subset_J_ullong : terminal_subsets_of_size.at(subset_size))
+        for (TerminalSubset terminal_subset_J : _terminal_subsets_of_size.at(subset_size))
         {
-            // create the corresponding TerminalSubset
-            TerminalSubset terminal_subset_J = terminal_subset_J_ullong;
-
             // r0 must be in J
-            if (terminal_subset_J[r0] == 0)
+            if (terminal_subset_J[r0_terminal_id] == 0)
             {
                 continue;
             }
@@ -76,10 +69,8 @@ double DijkstraSteiner::get_or_compute_j_terminal_bound(
                 continue;
             }
 
-            SteinerGraph::NodeId r0_node_id = _graph.get_terminals().at(r0);
-
             // compute the SMT without v
-            int smt_without_node = dijkstra_steiner_algorithm(_graph, r0_node_id, false, terminal_subset_J).edge_weight_sum();
+            int smt_without_node = dijkstra_steiner_algorithm(_graph, r0, false, terminal_subset_J).edge_weight_sum();
             if (smt_without_node > result)
             {
                 result = smt_without_node;
@@ -98,13 +89,19 @@ double DijkstraSteiner::get_or_compute_j_terminal_bound(
                 graph_with_node_as_terminal.make_terminal(node);
             }
 
+            // J united with {v} must also have size <= j+1
+            if (graph_with_node_as_terminal.num_terminals() > j + 1)
+            {
+                continue;
+            }
+
             // create a new terminalsubset for J united with {v}
             const SteinerGraph::TerminalId node_terminal_id = graph_with_node_as_terminal.find_terminal_id(node).value();
             TerminalSubset terminal_subset_J_with_node = terminal_subset_J;
             terminal_subset_J_with_node[node_terminal_id] = 1;
 
             // compute the SMT with v
-            int smt_with_node = dijkstra_steiner_algorithm(graph_with_node_as_terminal, r0_node_id, false, terminal_subset_J_with_node).edge_weight_sum();
+            int smt_with_node = dijkstra_steiner_algorithm(graph_with_node_as_terminal, r0, false, terminal_subset_J_with_node).edge_weight_sum();
             if (smt_with_node > result)
             {
                 result = smt_with_node;

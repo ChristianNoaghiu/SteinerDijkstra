@@ -35,6 +35,8 @@ public:
 private:
     SteinerGraph _graph;
     TerminalSubset _all_terminals;
+    using TerminalSubsetsBySize = std::vector<std::vector<TerminalSubset>>;
+    TerminalSubsetsBySize _terminal_subsets_of_size;
 
     // for dynamic distance computations
     std::vector<std::vector<int>> _distance_matrix;
