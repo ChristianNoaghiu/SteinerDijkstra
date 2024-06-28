@@ -105,10 +105,8 @@ SteinerGraph DijkstraSteiner::dijkstra_steiner_algorithm(
     terminals_with_r0.set(r0_terminal_id); // having this in the declaration as terminals_without_r0.set(...) would alter terminals_without_r0
     const LabelKey final_permanent_label = make_pair(r0, terminals_without_r0);
     // main loop doing all the work
-    int l = 0;
     while (!permanent_labels.count(final_permanent_label))
     {
-        const auto start = std::chrono::high_resolution_clock::now();
         if (non_permanent_labels.empty())
         {
             throw std::runtime_error("No path found");
@@ -158,9 +156,6 @@ SteinerGraph DijkstraSteiner::dijkstra_steiner_algorithm(
                 }
             }
         }
-        const auto end = std::chrono::high_resolution_clock::now();
-        l++;
-        std::cout << "Iteration " << l << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms" << std::endl;
     }
     std::vector<EdgeTuple> edge_vector = backtrack(backtrack_data, final_permanent_label);
     SteinerGraph result_graph = graph.clear_edges();

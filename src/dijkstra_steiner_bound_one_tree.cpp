@@ -2,7 +2,6 @@
 #include "dijkstra_steiner.h"
 #include "steinergraph.h"
 #include <optional>
-#include <chrono>
 
 /**
  * returns the 1-tree-bound from the Dijkstra-Steiner algorithm
