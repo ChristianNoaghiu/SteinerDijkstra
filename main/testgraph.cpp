@@ -8,12 +8,12 @@ int main(int argc, char *argv[])
 {
     if (argc > 1)
     {
-        std::cout << "Hi" << std::endl;
         SteinerGraph g(argv[1]);
         DijkstraSteiner algorithm(g);
-        SteinerGraph dijkstra_steiner_result = algorithm.compute_optimal_steiner_tree(0, false);
+        algorithm.test_get_topologies();
+        /*SteinerGraph dijkstra_steiner_result = algorithm.compute_optimal_steiner_tree(0, false);
 
-        dijkstra_steiner_result.print();
+        dijkstra_steiner_result.print();*/
 
         /*std::cout << dijkstra_steiner_result.size() << std::endl;
 
