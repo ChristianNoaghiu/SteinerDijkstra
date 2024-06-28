@@ -18,6 +18,17 @@ DijkstraSteiner::DijkstraSteiner(const SteinerGraph &graph) : _graph(graph)
 
 SteinerGraph DijkstraSteiner::compute_optimal_steiner_tree(const SteinerGraph::NodeId r0, const bool lower_bound_bool)
 {
+    if (lower_bound_bool)
+    {
+        // initialize terminal_subsets_of_size
+        // it is needed for the bound computation
+        // terminal_subsets_of_size.at(n) stores all terminal subsets of size n
+        std::vector<std::vector<TerminalSubset>> terminal_subsets_of_size(_graph.num_terminals() + 1);
+        for (TerminalSubset terminal_subset_runner = _all_terminals; terminal_subset_runner.any(); terminal_subset_runner = minus_one(terminal_subset_runner)) //  Die "Lauf-variable" läuft alle subsets ab
+        {
+            terminal_subsets_of_size.at(terminal_subset_runner.count()).push_back(terminal_subset_runner);
+        }
+    }
     return compute_optimal_steiner_tree(_graph, r0, lower_bound_bool);
 }
 

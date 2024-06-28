@@ -3,6 +3,7 @@
 #include "steinergraph.h"
 #include "dijkstra_steiner.h"
 #include <iostream>
+#include <chrono>
 
 int main(int argc, char *argv[])
 {
@@ -13,7 +14,7 @@ int main(int argc, char *argv[])
         DijkstraSteiner algorithm(g);
         SteinerGraph dijkstra_steiner_result = algorithm.compute_optimal_steiner_tree(0, false);
 
-        dijkstra_steiner_result.print();
+        dijkstra_steiner_result.print_weight();
 
         /*std::cout << dijkstra_steiner_result.size() << std::endl;
 

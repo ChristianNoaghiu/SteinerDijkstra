@@ -102,6 +102,7 @@ public:
   const std::vector<NodeId> &get_terminals() const;
   int edge_weight_sum() const;
   void print() const;
+  void print_weight() const;
 
   std::optional<TerminalId> find_terminal_id(const NodeId node) const;
 

@@ -45,25 +45,12 @@ double DijkstraSteiner::get_or_compute_j_terminal_bound(
         return _computed_j_terminal_bounds[label_key];
     }
 
-    /** @todo outsource this to avoid duplicate code */
-    // terminal_subsets_of_size.at(n) stores all ullongs of terminal subsets of size n
-    std::vector<std::vector<unsigned long long>> terminal_subsets_of_size(_graph.num_terminals() + 1);
-
-    /** @todo what if num_terminals exceeds 64? Or is exactly 64? */
-    for (unsigned long long terminal_subset_ullong = 0; terminal_subset_ullong < (1ULL << _graph.num_terminals()); terminal_subset_ullong++)
-    {
-        terminal_subsets_of_size.at(TerminalSubset(terminal_subset_ullong).count()).push_back(terminal_subset_ullong);
-    }
-
     int result = 0;
 
     for (int subset_size = 1; subset_size <= j + 1; subset_size++)
     {
-        for (unsigned long long terminal_subset_J_ullong : terminal_subsets_of_size.at(subset_size))
+        for (TerminalSubset terminal_subset_J : _terminal_subsets_of_size.at(subset_size))
         {
-            // create the corresponding TerminalSubset
-            TerminalSubset terminal_subset_J = terminal_subset_J_ullong;
-
             // r0 must be in J
             if (terminal_subset_J[r0] == 0)
             {
