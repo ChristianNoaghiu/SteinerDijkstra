@@ -13,12 +13,12 @@ double DijkstraSteiner::get_or_compute_one_tree_bound(
 {
     // check validity of parameters
     _graph.check_valid_node(node);
-    _graph.check_valid_terminal(r0);
 
-    if (r0 >= static_cast<int>(terminal_subset.size()))
+    if (!_graph.get_node(r0).is_terminal())
     {
-        throw std::runtime_error("r0 exceeds the size of terminal_subset");
+        throw std::runtime_error("r0 must be a terminal");
     }
+
     SteinerGraph::TerminalId r0_terminal_id = _graph.find_terminal_id(r0).value();
     // second case of one-tree bound definition
     if (terminal_subset[r0_terminal_id] == 0)
