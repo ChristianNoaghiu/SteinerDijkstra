@@ -1,9 +1,5 @@
 #include "steinergraph.h"
 #include "dijkstra_steiner.h"
-
-DijkstraSteiner::DijkstraSteiner(const SteinerGraph &graph) : _graph(graph) {}
-
-#include "steinergraph.h"
 #include <queue>
 
 #include <bitset>
@@ -12,13 +8,20 @@ DijkstraSteiner::DijkstraSteiner(const SteinerGraph &graph) : _graph(graph) {}
 #include <unordered_map>
 #include <vector>
 
+DijkstraSteiner::DijkstraSteiner(const SteinerGraph &graph) : _graph(graph)
+{
+    for (SteinerGraph::TerminalId terminal = 0; terminal < graph.num_terminals(); terminal++)
+    {
+        _all_terminals.set(terminal);
+    }
+}
 
-SteinerGraph DijkstraSteiner::compute_optimal_steiner_tree(const SteinerGraph::NodeId r0, const bool lower_bound_bool)
+SteinerGraph DijkstraSteiner::compute_optimal_steiner_tree(const SteinerGraph::TerminalId r0, const bool lower_bound)
 {
     return compute_optimal_steiner_tree(_graph, r0, lower_bound);
 }
 
-SteinerGraph DijkstraSteiner::compute_optimal_steiner_tree(const SteinerGraph &graph, const SteinerGraph::NodeId r0, const bool lower_bound_bool)
+SteinerGraph DijkstraSteiner::compute_optimal_steiner_tree(const SteinerGraph &graph, const SteinerGraph::NodeId r0, const bool lower_bound)
 {
     TerminalSubset terminals = 0;
     for (const SteinerGraph::NodeId &terminal : graph.get_terminals())
@@ -51,7 +54,7 @@ SteinerGraph DijkstraSteiner::dijkstra_steiner_algorithm(
     SteinerGraph::TerminalId r0_terminal_id;
     TerminalSubset terminals_without_r0 = 0; /** @todo const and immediately define after bitset change - no, since */
     // labels definition
-    LabelKeyToDoubleMap labels;
+    LabelKeyToIntMap labels;
     // backtrack definition
     LabelKeyToWeightedLabelKeyVectorMap backtrack_data; // vector of pairs, since several label-pairs can be associated with (v, I)
     // non_permanent_labels definition (N)

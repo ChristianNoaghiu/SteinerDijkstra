@@ -54,6 +54,7 @@ public:
   void add_edge(const NodeId tail, const NodeId head, const int weight = 1);
   void make_terminal(const NodeId new_terminal);
   void set_predecessor(const NodeId node_id, const std::optional<NodeId> predecessor);
+  void make_directed();
 
   struct DijkstraStruct
   {
@@ -116,6 +117,7 @@ private:
       SteinerGraph &result_graph)
       const;
 
+  bool _is_directed;
   std::vector<Node> _nodes;
   std::vector<NodeId> _terminals;
 

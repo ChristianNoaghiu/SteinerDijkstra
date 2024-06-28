@@ -209,7 +209,7 @@ namespace
     }
 }
 
-SteinerGraph::SteinerGraph(char const *filename) // Konstruktor der Klasse   -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+SteinerGraph::SteinerGraph(char const *filename) : _is_directed(false) // Konstruktor der Klasse   -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
 {
     std::ifstream file(filename); // open file
     if (not file)
