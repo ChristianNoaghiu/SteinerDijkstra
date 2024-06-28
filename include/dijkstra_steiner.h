@@ -23,14 +23,7 @@ public:
     SteinerGraph compute_optimal_steiner_tree(const SteinerGraph::NodeId r0, const bool lower_bound_bool);
     SteinerGraph compute_optimal_steiner_tree(const SteinerGraph &graph, const SteinerGraph::NodeId r0, const bool lower_bound_bool);
 
-    /** @todo fix this being in public */
     using TerminalSubset = std::bitset<bitset_length>;
-
-    /** @todo remove this */
-    void test_j_terminal_bound();
-    void test_enumerate_topologies_one_element_terminal_subset();
-    void test_get_topologies();
-    void test_is_tree();
 
 private:
     SteinerGraph _graph;
@@ -56,8 +49,7 @@ private:
     public:
         std::size_t operator()(const std::tuple<SteinerGraph::TerminalId, SteinerGraph::TerminalId, DijkstraSteiner::TerminalSubset> &x) const;
     };
-    /** @todo fix this */
-    // using TerminalSubset = std::bitset<64>;
+
     using EdgeTuple = std::tuple<SteinerGraph::NodeId, SteinerGraph::NodeId, int>;
     using LabelKey = std::pair<SteinerGraph::NodeId, TerminalSubset>;
     using WeightedLabelKey = std::pair<double, LabelKey>;
@@ -116,7 +108,6 @@ private:
         const TerminalSubset &terminal_subset,
         const SteinerGraph::NodeId r0);
 
-    /** @todo check if all functions are really used */
     // tsp bound
     using HamiltonianPathKey = std::tuple<SteinerGraph::NodeId, SteinerGraph::NodeId, TerminalSubset>;
     using HamiltonianPathKeyToDoubleMap = std::unordered_map<
@@ -147,11 +138,6 @@ private:
         const LabelKeyToWeightedLabelKeyVectorMap &backtrack,
         const LabelKey &current_label) const;
 
-    /** @todo remove this */
-    // testing
-    void test_one_tree_bound();
-    void test_tsp_bound();
-
     // helper function for loop in dijkstra_steiner_algorithm
     TerminalSubset minus_one(const TerminalSubset &input) const;
     SteinerGraph dijkstra_steiner_algorithm(
@@ -178,7 +164,6 @@ private:
         const TerminalSubset &terminalsubset,
         const int max_detour);
 
-    // tested
     std::vector<TopologyStruct> enumerate_topologies_one_element_terminal_subset(
         const SteinerGraph::NodeId node,
         const TerminalSubset &terminal_subset);

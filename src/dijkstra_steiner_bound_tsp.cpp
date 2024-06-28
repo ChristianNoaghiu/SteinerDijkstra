@@ -40,14 +40,8 @@ double DijkstraSteiner::get_or_compute_tsp_bound(
 
         for (SteinerGraph::TerminalId j = 0; j < _graph.num_terminals(); j++)
         {
-            /** @todo must we check i == j??
-             * since a hamiltonian path is not possible with only two nodes (node and i == j),
-             * but (1.2) in the paper does not exclude this case
-             *
-             * and what about the case when node is an element of terminal_subset?
-             * then, the edge which belongs to distance_matrix[node][node_j] could be part of the hamiltonian path
-             * (e.g. if |I| = 2), so the Hamiltonian cycle would use an edge twice
-             */
+            // we exclude the case where i == j, since a hamiltonian path is not possible with only two nodes (node and i == j)
+            // and we exclude that j is interminalsubset, since the hamiltonian cycle would use an edge twice
             if (i == j || !terminal_subset[j])
             {
                 continue;
@@ -113,24 +107,11 @@ void DijkstraSteiner::compute_hamiltonian_paths()
         _hamiltonian_paths[std::make_tuple(i, i, one_element_terminal_subset(i))] = 0;
     }
 
-    // terminal_subsets_of_size.at(n) stores all ullongs of terminal subsets of size n
-    std::vector<std::vector<unsigned long long>> terminal_subsets_of_size(_graph.num_terminals() + 1);
-
-    /** @todo what if num_terminals exceeds 64? Or is exactly 64? */
-    for (unsigned long long terminal_subset_ullong = 0; terminal_subset_ullong < (1ULL << _graph.num_terminals()); terminal_subset_ullong++)
-    {
-        terminal_subsets_of_size.at(TerminalSubset(terminal_subset_ullong).count()).push_back(terminal_subset_ullong);
-    }
-
     for (int n = 2; n <= _graph.num_terminals(); n++)
     {
         // iterate over all subsets of terminal_subset of size n
-        /** @todo is this possible faster? */
-        for (unsigned long long terminal_subset_ullong : terminal_subsets_of_size.at(n))
+        for (const TerminalSubset &terminal_subset : _terminal_subsets_of_size.at(n))
         {
-            // create the corresponding TerminalSubset
-            TerminalSubset terminal_subset = terminal_subset_ullong;
-
             // iterate over all elements i, j of terminal_subset
             for (SteinerGraph::TerminalId i = 0; i < _graph.num_terminals(); i++)
             {
@@ -186,12 +167,4 @@ void DijkstraSteiner::compute_hamiltonian_paths()
             }
         }
     }
-}
-
-void DijkstraSteiner::test_tsp_bound()
-{
-    compute_hamiltonian_paths();
-    std::cout << get_hamiltonian_path(std::make_tuple(0, 0, 0b001)) << "\n";
-    std::cout << get_hamiltonian_path(std::make_tuple(0, 1, 0b011)) << "\n";
-    std::cout << get_or_compute_tsp_bound(2, 0b011) << "\n";
 }

@@ -20,17 +20,6 @@ double DijkstraSteiner::compute_compare_bound(
     return label + complement_bound;
 }
 
-void DijkstraSteiner::test_get_topologies()
-{
-    std::cout << get_or_compute_distance(0, 1) << std::endl;
-    DijkstraSteiner::TerminalSubset terminal_subset = 0b111;
-    std::vector<DijkstraSteiner::TopologyStruct> topologies = get_topologies(0, terminal_subset, 2);
-    for (const DijkstraSteiner::TopologyStruct &topology : topologies)
-    {
-        topology.topology.print();
-    }
-}
-
 std::vector<DijkstraSteiner::TopologyStruct> DijkstraSteiner::get_topologies(
     const SteinerGraph::NodeId r0,
     const DijkstraSteiner::TerminalSubset &terminalsubset,
@@ -246,13 +235,6 @@ std::vector<DijkstraSteiner::TopologyStruct> DijkstraSteiner::enumerate_topologi
     throw std::invalid_argument("Invalid terminal_subset");
 }
 
-/** @todo remove this */
-void DijkstraSteiner::test_enumerate_topologies_one_element_terminal_subset()
-{
-    auto topologies = enumerate_topologies_one_element_terminal_subset(3, 0b010);
-    std::cout << "Enumerate topologies for one element terminal subset" << std::endl;
-}
-
 SteinerGraph DijkstraSteiner::compute_backtracking_graph(
     const SteinerGraph::NodeId node,
     const TerminalSubset &terminal_subset,
@@ -376,27 +358,6 @@ bool DijkstraSteiner::is_tree(const DijkstraSteiner::TopologyStruct &topology_st
     // which doesn't contain a cycle, therefore it is a tree
 
     return true;
-}
-
-/** @todo remove this */
-void DijkstraSteiner::test_is_tree()
-{
-    SteinerGraph graph(4);
-    graph.add_edge(0, 1);
-    graph.add_edge(1, 2);
-
-    std::vector<bool> existent_nodes = {true, true, true, false};
-    std::vector<EdgeTuple> existent_edges = {{0, 1, 3}, {1, 2, 5}};
-    DijkstraSteiner::TopologyStruct topology_struct = {graph, existent_nodes, existent_edges, 0};
-
-    if (is_tree(topology_struct))
-    {
-        std::cout << "Topology is a tree" << std::endl;
-    }
-    else
-    {
-        std::cout << "Topology is not a tree" << std::endl;
-    }
 }
 
 /**

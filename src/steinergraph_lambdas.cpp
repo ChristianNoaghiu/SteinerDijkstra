@@ -43,10 +43,6 @@ const std::function<bool(const SteinerGraph::NodeId)> SteinerGraph::is_in_graph(
 {
     return [](__attribute__((unused)) const SteinerGraph::NodeId node)
     {
-        /**
-         * @todo Wunused complains about node not being used,
-         * therefore this redundant comparison
-         */
         return true;
     };
 }
@@ -59,10 +55,6 @@ const std::function<bool(const SteinerGraph::NodeId)> SteinerGraph::is_terminal(
 {
     return [&terminals = _terminals](__attribute__((unused)) const SteinerGraph::NodeId node)
     {
-        /**
-         * @todo Wunused complains about node not being used,
-         * therefore this redundant comparison
-         */
         return std::find(terminals.begin(), terminals.end(), node) != terminals.end();
     };
 }

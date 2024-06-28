@@ -141,9 +141,3 @@ double DijkstraSteiner::get_or_compute_j_terminal_bound(
     _computed_j_terminal_bounds[label_key] = result;
     return result;
 }
-
-void DijkstraSteiner::test_j_terminal_bound()
-{
-    std::cout << "hi" << std::endl;
-    std::cout << get_or_compute_j_terminal_bound(2, 0, 2, 0b011) << "\n";
-}

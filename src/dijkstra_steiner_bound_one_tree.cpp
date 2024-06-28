@@ -97,18 +97,3 @@ double DijkstraSteiner::get_or_compute_one_tree_bound(
     _computed_one_tree_bounds[label_key] = result;
     return result;
 }
-
-/** @todo remove this */
-void DijkstraSteiner::test_one_tree_bound()
-{
-    /*double x1 = get_or_compute_one_tree_bound(0, 0b111, 0);
-    double x2 = get_or_compute_one_tree_bound(0, 0b111, 0);*/
-    std::cout << get_or_compute_distance(0, 1) << "\n";
-    std::cout << get_or_compute_distance(2, 3) << "\n";
-    std::cout << get_or_compute_one_tree_bound(0, 0b011, 0) << "\n";
-    std::cout << get_or_compute_one_tree_bound(1, 0b011, 0) << "\n";
-    std::cout << get_or_compute_one_tree_bound(2, 0b011, 0) << "\n";
-    std::cout << get_or_compute_one_tree_bound(3, 0b011, 0) << "\n";
-    std::cout << get_or_compute_one_tree_bound(4, 0b011, 0) << "\n";
-    std::cout << get_or_compute_one_tree_bound(0, 0b001, 0) << "\n";
-}
