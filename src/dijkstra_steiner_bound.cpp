@@ -11,11 +11,11 @@ double DijkstraSteiner::bound(
     double bound = 0;
     if (lower_bound_bool)
     {
-        const double j_terminal_bound = get_or_compute_j_terminal_bound(3, r0, node, terminal_subset);
+        // const double j_terminal_bound = get_or_compute_j_terminal_bound(3, r0, node, terminal_subset);
         const double one_tree_bound = get_or_compute_one_tree_bound(node, terminal_subset, r0);
         const double tsp_bound = get_or_compute_tsp_bound(node, terminal_subset);
 
-        bound = std::max(j_terminal_bound, std::max(one_tree_bound, tsp_bound));
+        bound = /*std::max(j_terminal_bound, */ std::max(one_tree_bound, tsp_bound);
     }
     return bound;
 }

@@ -75,6 +75,5 @@ SteinerGraph::allDijkstraPathsStruct SteinerGraph::all_dijkstra_paths(const Node
             }
         }
     }
-
     return result;
 }
