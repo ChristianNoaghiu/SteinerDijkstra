@@ -97,6 +97,11 @@ SteinerGraph DijkstraSteiner::dijkstra_steiner_algorithm(
         throw std::invalid_argument("r0 is not in the terminalsubset");
     }
 
+    if (terminalsubset.count() == 1)
+    {
+        return _graph.clear_edges();
+    }
+
     TerminalSubset terminals_with_r0 = terminals_without_r0;
     terminals_with_r0.set(r0_terminal_id); // having this in the declaration as terminals_without_r0.set(...) would alter terminals_without_r0
     const LabelKey final_permanent_label = make_pair(r0, terminals_without_r0);

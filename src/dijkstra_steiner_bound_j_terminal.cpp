@@ -53,7 +53,7 @@ double DijkstraSteiner::get_or_compute_j_terminal_bound(
 
     int result = 0;
 
-    for (int subset_size = 1; subset_size <= j + 1; subset_size++)
+    for (int subset_size = 1; subset_size <= std::min(j + 1, _graph.num_terminals()); subset_size++)
     {
         for (TerminalSubset terminal_subset_J : _terminal_subsets_of_size.at(subset_size))
         {
@@ -87,6 +87,12 @@ double DijkstraSteiner::get_or_compute_j_terminal_bound(
             if (!graph_with_node_as_terminal.get_node(node).is_terminal())
             {
                 graph_with_node_as_terminal.make_terminal(node);
+            }
+
+            // J united with {v} must also have size <= j+1
+            if (graph_with_node_as_terminal.num_terminals() > j + 1)
+            {
+                continue;
             }
 
             // create a new terminalsubset for J united with {v}
