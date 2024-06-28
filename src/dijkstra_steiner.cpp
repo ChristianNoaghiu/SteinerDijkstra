@@ -12,12 +12,13 @@ DijkstraSteiner::DijkstraSteiner(const SteinerGraph &graph) : _graph(graph) {}
 #include <unordered_map>
 #include <vector>
 
-SteinerGraph DijkstraSteiner::compute_optimal_steiner_tree(const SteinerGraph::TerminalId r0, const bool lower_bound)
+
+SteinerGraph DijkstraSteiner::compute_optimal_steiner_tree(const SteinerGraph::NodeId r0, const bool lower_bound_bool)
 {
     return compute_optimal_steiner_tree(_graph, r0, lower_bound);
 }
 
-SteinerGraph DijkstraSteiner::compute_optimal_steiner_tree(const SteinerGraph &graph, const SteinerGraph::TerminalId r0, const bool lower_bound)
+SteinerGraph DijkstraSteiner::compute_optimal_steiner_tree(const SteinerGraph &graph, const SteinerGraph::NodeId r0, const bool lower_bound_bool)
 {
     TerminalSubset terminals = 0;
     for (const SteinerGraph::NodeId &terminal : graph.get_terminals())
@@ -32,7 +33,7 @@ SteinerGraph DijkstraSteiner::compute_optimal_steiner_tree(const SteinerGraph &g
  */
 SteinerGraph DijkstraSteiner::dijkstra_steiner_algorithm(
     const SteinerGraph &graph,
-    const SteinerGraph::TerminalId r0,
+    const SteinerGraph::NodeId r0,
     const bool lower_bound_bool,
     const DijkstraSteiner::TerminalSubset &terminalsubset) // terminalsubset is a bitset, we need this for the bound using this algorithm on a terminal-subset
 {

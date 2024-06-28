@@ -22,6 +22,7 @@ public:
     // wrapper for the dijkstra_steiner_algorithm with all terminals
     SteinerGraph compute_optimal_steiner_tree(const SteinerGraph::NodeId r0, const bool lower_bound);
     SteinerGraph compute_optimal_steiner_tree(const SteinerGraph &graph, const SteinerGraph::TerminalId r0, const bool lower_bound);
+
     /** @todo fix this being in public */
     using TerminalSubset = std::bitset<bitset_length>;
 

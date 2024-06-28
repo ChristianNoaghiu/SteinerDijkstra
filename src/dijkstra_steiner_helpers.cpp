@@ -5,27 +5,32 @@
  * returns the bitset-input -1 as a bitset again, for arbitrary bitset length
  * use: go through all subsets of a given bitset by subtracting 1 from the bitset until it is 0
  */
-DijkstraSteiner::TerminalSubset DijkstraSteiner::minus_one(const DijkstraSteiner::TerminalSubset &input) const
+
+DijkstraSteiner::TerminalSubset DijkstraSteiner::minus_one(const DijkstraSteiner::TerminalSubset &input)
 {
+    if (input.none())
+    {
+        throw std::invalid_argument("input is 0, so we cannot subtract");
+    }
     const TerminalSubset mask = -1ULL;
     TerminalSubset result = 0;
     int i = 0;
     const int width = std::numeric_limits<unsigned long long>::digits;
-    // iterate through the bitset in 64-bit steps (words), so we can use to_ullong() to get the 64-bit integer and subtract 1 fast
-    // for that, we need to invert all bits up to the first 1 (it included) of the input
-    while (i <= bitset_length)
+    // iterate in 64-bit steps (words) and use to_ullong() for 64-bit integer and fast subtraction - means bits need to be set to 1 until the first word with 1 is found
+    while (i < bitset_length)
     {
-        if (!((result >> i) & mask).any())
+        if ((input & (mask << i)).none())
         {
-            // input has to be all zeros in this word for this case to happen
             result ^= mask << i;
             i += width;
             continue;
         }
-        // if we are here, we have found a 1 in the current (<=64-bit) word and will use to_ullong for fast subtraction
-        const TerminalSubset temp = (((input >> i) & mask).to_ullong() - 1) << i;
-        result ^= temp;
-        result ^= (input >> (i + width)) << (i + width); // copy the rest of the input
+        // found 1, use to_ullong() for fast -1
+        const TerminalSubset temp = (((input >> i) & mask).to_ullong() - 1);
+        result ^= temp << i; // I hope this is faster then doing it manually with __builtin_ctzl
+        // insert rest of input
+        const TerminalSubset temp2 = (input & (mask << (i + width)));
+        result ^= temp2;
         break;
     }
     return result;
