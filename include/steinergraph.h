@@ -107,6 +107,8 @@ public:
       const std::vector<std::vector<int>> &metric_closure_distance_matrix)
       const;
 
+  unsigned int edge_count(NodeId head, NodeId tail, int weight) const;
+
 private:
   void add_path_to_steiner_tree_mst_approximation(
       const NodeId &start_node,
@@ -117,9 +119,14 @@ private:
       SteinerGraph &result_graph)
       const;
 
+  struct EdgeHash
+  {
+    std::size_t operator()(const EdgeTuple &edge) const;
+  };
   bool _is_directed;
   std::vector<Node> _nodes;
   std::vector<NodeId> _terminals;
+  std::unordered_multiset<EdgeTuple, EdgeHash> _edges;
 
   // for queues in Dijkstra's and Prim's algorithms
   using NodeDistancePair = std::pair<SteinerGraph::NodeId, int>;

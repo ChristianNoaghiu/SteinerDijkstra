@@ -88,10 +88,22 @@ void SteinerGraph::add_edge(const NodeId tail, const NodeId head, const int weig
       throw std::runtime_error("Edge cannot be added due to undefined endpoint.");
    }
    _nodes[tail].add_neighbor(head, weight);
+   _edges.insert(std::make_tuple(tail, head, weight));
    if (!_is_directed)
    {
       _nodes[head].add_neighbor(tail, weight);
+      _edges.insert(std::make_tuple(head, tail, weight));
    }
+}
+
+size_t SteinerGraph::EdgeHash::operator()(const SteinerGraph::EdgeTuple &edge) const
+{
+   return std::hash<NodeId>()(std::get<0>(edge)) ^ (std::hash<NodeId>()(std::get<1>(edge)) << 1) ^ (std::hash<int>()(std::get<2>(edge)) << 2);
+}
+
+unsigned int SteinerGraph::edge_count(NodeId head, NodeId tail, int weight) const
+{
+   return _edges.count(std::make_tuple(head, tail, weight));
 }
 
 void SteinerGraph::Node::add_neighbor(const SteinerGraph::NodeId nodeid, const int weight)
