@@ -20,6 +20,21 @@ SteinerGraph::node_distance_pair_compare()
     };
 }
 
+std::function<bool(
+    const SteinerGraph::EdgeTuple,
+    const SteinerGraph::EdgeTuple)>
+SteinerGraph::edge_tuple_compare()
+{
+    return [](const SteinerGraph::EdgeTuple &edge_tuple1,
+              const SteinerGraph::EdgeTuple &edge_tuple2)
+    {
+        const int distance1 = std::get<2>(edge_tuple1);
+        const int distance2 = std::get<2>(edge_tuple2);
+
+        return (distance1 > distance2);
+    };
+}
+
 /**
  * lambda returning true for all nodes
  * (whole graph as subgraph)

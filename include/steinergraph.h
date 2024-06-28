@@ -56,6 +56,14 @@ public:
   void set_predecessor(const NodeId node_id, const std::optional<NodeId> predecessor);
   void make_directed();
 
+  struct allDijkstraPathsStruct
+  {
+    NodeId furthest_node;
+    std::vector<int> distances;
+    std::vector<std::vector<std::pair<std::optional<NodeId>, int>>> predecessors;
+  };
+  allDijkstraPathsStruct all_dijkstra_paths(const NodeId start_node) const;
+
   struct DijkstraStruct
   {
     std::vector<int> distances;
@@ -134,6 +142,10 @@ private:
       const NodeDistancePair,
       const NodeDistancePair)>
   node_distance_pair_compare();
+  static std::function<bool(
+      const EdgeTuple,
+      const EdgeTuple)>
+  edge_tuple_compare();
 
   const std::function<bool(const SteinerGraph::NodeId)> is_in_graph() const;
   const std::function<bool(const SteinerGraph::NodeId)> is_terminal() const;
