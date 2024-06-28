@@ -16,19 +16,19 @@ DijkstraSteiner::DijkstraSteiner(const SteinerGraph &graph) : _graph(graph)
     }
 }
 
-SteinerGraph DijkstraSteiner::compute_optimal_steiner_tree(const SteinerGraph::NodeId r0, const bool lower_bound)
+SteinerGraph DijkstraSteiner::compute_optimal_steiner_tree(const SteinerGraph::NodeId r0, const bool lower_bound_bool)
 {
-    return compute_optimal_steiner_tree(_graph, r0, lower_bound);
+    return compute_optimal_steiner_tree(_graph, r0, lower_bound_bool);
 }
 
-SteinerGraph DijkstraSteiner::compute_optimal_steiner_tree(const SteinerGraph &graph, const SteinerGraph::NodeId r0, const bool lower_bound)
+SteinerGraph DijkstraSteiner::compute_optimal_steiner_tree(const SteinerGraph &graph, const SteinerGraph::NodeId r0, const bool lower_bound_bool)
 {
     TerminalSubset terminals = 0;
     for (const SteinerGraph::NodeId &terminal : graph.get_terminals())
     {
         terminals.set(terminal);
     }
-    return dijkstra_steiner_algorithm(graph, r0, lower_bound, terminals);
+    return dijkstra_steiner_algorithm(graph, r0, lower_bound_bool, terminals);
 }
 
 /**

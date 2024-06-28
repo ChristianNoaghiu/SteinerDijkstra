@@ -20,8 +20,8 @@ private:
 public:
     DijkstraSteiner(const SteinerGraph &graph);
     // wrapper for the dijkstra_steiner_algorithm with all terminals
-    SteinerGraph compute_optimal_steiner_tree(const SteinerGraph::NodeId r0, const bool lower_bound);
-    SteinerGraph compute_optimal_steiner_tree(const SteinerGraph &graph, const SteinerGraph::NodeId r0, const bool lower_bound);
+    SteinerGraph compute_optimal_steiner_tree(const SteinerGraph::NodeId r0, const bool lower_bound_bool);
+    SteinerGraph compute_optimal_steiner_tree(const SteinerGraph &graph, const SteinerGraph::NodeId r0, const bool lower_bound_bool);
 
     /** @todo fix this being in public */
     using TerminalSubset = std::bitset<bitset_length>;
@@ -125,7 +125,7 @@ private:
     // total bound
     double bound(
         const SteinerGraph::NodeId r0,
-        const bool lower_bound,
+        const bool lower_bound_bool,
         const SteinerGraph::NodeId node,
         const TerminalSubset &R_without_I);
 
@@ -144,7 +144,7 @@ private:
     SteinerGraph dijkstra_steiner_algorithm(
         const SteinerGraph &graph,
         const SteinerGraph::NodeId r0,
-        const bool lower_bound,
+        const bool _bool,
         const TerminalSubset &terminalsubset);
 
     struct TopologyStruct
