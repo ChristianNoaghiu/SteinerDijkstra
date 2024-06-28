@@ -15,7 +15,6 @@ public:
   using NodeId = int; // vertices are numbered 0,...,num_nodes()-1
   using EdgeTuple = std::tuple<NodeId, NodeId, int>;
   using TerminalId = int;
-  using TerminalSubset = std::bitset<64>;
 
   class Neighbor
   {
@@ -94,6 +93,8 @@ public:
   const std::vector<NodeId> &get_terminals() const;
   int edge_weight_sum() const;
   void print() const;
+
+  std::optional<TerminalId> find_terminal_id(const NodeId node) const;
 
   static const int infinite_weight;
   static const int infinite_distance;
