@@ -70,7 +70,26 @@ double DijkstraSteiner::get_or_compute_j_terminal_bound(
             }
 
             // compute the SMT without v
-            int smt_without_node = dijkstra_steiner_algorithm(_graph, r0, false, terminal_subset_J).edge_weight_sum();
+            if (!_computed_smts_r0.has_value())
+            {
+                _computed_smts_r0 = r0;
+            }
+            else if (_computed_smts_r0.value() != r0)
+            {
+                throw std::runtime_error("r0 value does not match with previous computations");
+            }
+
+            int smt_without_node = 0;
+            if (!_computed_smt_without_extra_node.count(terminal_subset_J))
+            {
+                smt_without_node = dijkstra_steiner_algorithm(_graph, r0, false, terminal_subset_J).edge_weight_sum();
+                _computed_smt_without_extra_node[terminal_subset_J] = smt_without_node;
+            }
+            else
+            {
+                smt_without_node = _computed_smt_without_extra_node[terminal_subset_J];
+            }
+
             if (smt_without_node > result)
             {
                 result = smt_without_node;
@@ -95,13 +114,23 @@ double DijkstraSteiner::get_or_compute_j_terminal_bound(
                 continue;
             }
 
-            // create a new terminalsubset for J united with {v}
-            const SteinerGraph::TerminalId node_terminal_id = graph_with_node_as_terminal.find_terminal_id(node).value();
-            TerminalSubset terminal_subset_J_with_node = terminal_subset_J;
-            terminal_subset_J_with_node[node_terminal_id] = 1;
-
             // compute the SMT with v
-            int smt_with_node = dijkstra_steiner_algorithm(graph_with_node_as_terminal, r0, false, terminal_subset_J_with_node).edge_weight_sum();
+            int smt_with_node = 0;
+            LabelKey label_key_with_node = std::make_pair(node, terminal_subset_J);
+            if (!_computed_smt_with_extra_node.count(label_key_with_node))
+            {
+                // create a new terminalsubset for J united with {v}
+                const SteinerGraph::TerminalId node_terminal_id = graph_with_node_as_terminal.find_terminal_id(node).value();
+                TerminalSubset terminal_subset_J_with_node = terminal_subset_J;
+                terminal_subset_J_with_node[node_terminal_id] = 1;
+
+                smt_with_node = dijkstra_steiner_algorithm(graph_with_node_as_terminal, r0, false, terminal_subset_J_with_node).edge_weight_sum();
+                _computed_smt_with_extra_node[label_key_with_node] = smt_with_node;
+            }
+            else
+            {
+                smt_with_node = _computed_smt_with_extra_node[label_key_with_node];
+            }
             if (smt_with_node > result)
             {
                 result = smt_with_node;

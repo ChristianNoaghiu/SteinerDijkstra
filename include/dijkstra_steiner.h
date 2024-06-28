@@ -62,6 +62,7 @@ private:
     using WeightedLabelKey = std::pair<double, LabelKey>;
     using LabelKeyToDoubleMap = std::unordered_map<LabelKey, double, PairHash>;
     using LabelKeyToIntMap = std::unordered_map<LabelKey, int, PairHash>;
+    using TerminalSubsetToIntMap = std::unordered_map<TerminalSubset, int, std::hash<TerminalSubset>>;
     using LabelKeyToWeightedLabelKeyVectorMap = std::unordered_map<LabelKey, std::vector<WeightedLabelKey>, PairHash>;
     using DetourLabelKey = std::tuple<int, SteinerGraph::NodeId, TerminalSubset>;
     using DetourLabelKeyToLabelKeyVectorVectorMap = std::unordered_map<DetourLabelKey, std::vector<std::vector<LabelKey>>, TripleHash>;
@@ -91,6 +92,9 @@ private:
     std::optional<int> _computed_j_terminal_bound_j_value;
     /** stores the computed j-terminal bounds */
     LabelKeyToDoubleMap _computed_j_terminal_bounds;
+    std::optional<SteinerGraph::TerminalId> _computed_smts_r0;
+    TerminalSubsetToIntMap _computed_smt_without_extra_node;
+    LabelKeyToIntMap _computed_smt_with_extra_node;
     double get_or_compute_j_terminal_bound(
         const int j,
         const SteinerGraph::NodeId r0,
