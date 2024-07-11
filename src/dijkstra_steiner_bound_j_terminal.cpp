@@ -55,7 +55,7 @@ double DijkstraSteiner::get_or_compute_j_terminal_bound(
 
     for (int subset_size = 1; subset_size <= std::min(j + 1, _graph.num_terminals()); subset_size++)
     {
-        for (TerminalSubset terminal_subset_J : _terminal_subsets_of_size.at(subset_size))
+        for (const TerminalSubset terminal_subset_J : _terminal_subsets_of_size.at(subset_size))
         {
             // r0 must be in J
             if (terminal_subset_J[r0_terminal_id] == 0)

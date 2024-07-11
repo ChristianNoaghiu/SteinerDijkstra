@@ -52,10 +52,10 @@ double DijkstraSteiner::get_or_compute_tsp_bound(
 
             // compute the length of the Hamiltonian path from i to j
             HamiltonianPathKey hamilton_path_key = std::make_tuple(i, j, terminal_subset);
-            double hamiltonian_path = get_hamiltonian_path(hamilton_path_key);
+            const double hamiltonian_path = get_hamiltonian_path(hamilton_path_key);
 
             // compute the distance for closing the Hamiltonian cycle
-            double distance_node_i_j = distance_matrix[node][node_i] + distance_matrix[node][node_j];
+            const double distance_node_i_j = distance_matrix[node][node_i] + distance_matrix[node][node_j];
 
             // prevent overflow
             if (hamiltonian_path >= std::numeric_limits<double>::max() - distance_node_i_j)
@@ -64,7 +64,7 @@ double DijkstraSteiner::get_or_compute_tsp_bound(
             }
 
             // update result
-            double new_result = 0.5 * (distance_node_i_j + hamiltonian_path);
+            double new_result = (double(distance_node_i_j + hamiltonian_path)) / 2.0;
             if (new_result < result)
             {
                 result = new_result;
@@ -157,7 +157,7 @@ void DijkstraSteiner::compute_hamiltonian_paths()
                         }
 
                         // otherwise, computing new_value is safe
-                        double new_value = hamiltonian_path_without_j + distance_x_j;
+                        const double new_value = hamiltonian_path_without_j + distance_x_j;
                         if (get_hamiltonian_path(current_key) > new_value)
                         {
                             _hamiltonian_paths[current_key] = new_value;

@@ -92,7 +92,7 @@ double DijkstraSteiner::get_or_compute_one_tree_bound(
     }
 
     // store the result dynamically
-    double result = (static_cast<double>(distance_sum) / 2) + (static_cast<double>(mst_value) / 2);
+    double result = double(static_cast<double>(distance_sum) / 2.0) + double(mst_value / 2.0);
     _computed_one_tree_bounds[label_key] = result;
     return result;
 }

@@ -61,7 +61,7 @@ SteinerGraph::DijkstraStruct SteinerGraph::dijkstra(
             if (distance_to_current_node + neighbor.edge_weight() < distance_to_neighbor)
             {
                 // if yes, update the distance to the current neighbor
-                int updated_distance = distance_to_current_node + neighbor.edge_weight();
+                const int updated_distance = distance_to_current_node + neighbor.edge_weight();
                 result.distances.at(neighbor.id()) = updated_distance;
                 result.predecessors.at(neighbor.id()) = current_node;
                 result.predecessor_weights.at(neighbor.id()) = neighbor.edge_weight();
