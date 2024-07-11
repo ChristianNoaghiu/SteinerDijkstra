@@ -10,7 +10,7 @@ int main(int argc, char *argv[])
     {
         SteinerGraph g(argv[1]);
         DijkstraSteiner algorithm(g);
-        SteinerGraph dijkstra_steiner_result = algorithm.compute_optimal_steiner_tree(g.find_terminal_node().value(), true);
+        SteinerGraph dijkstra_steiner_result = algorithm.compute_optimal_steiner_tree(g.find_terminal_node().value(), false);
 
         dijkstra_steiner_result.print_weight();
     }
