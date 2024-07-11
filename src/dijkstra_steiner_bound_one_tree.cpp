@@ -57,7 +57,7 @@ double DijkstraSteiner::get_or_compute_one_tree_bound(
             continue;
         }
 
-        for (SteinerGraph::TerminalId j = 0; j < _graph.num_terminals(); j++)
+        for (SteinerGraph::TerminalId j = i; j < _graph.num_terminals(); j++)
         {
             if (terminal_subset[j] == 0)
             {
