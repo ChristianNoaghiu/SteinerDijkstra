@@ -95,23 +95,14 @@ double DijkstraSteiner::get_or_compute_j_terminal_bound(
                 result = smt_without_node;
             }
 
-            // if v is already in J, then we don't need to compute the SMT with v
-            if (_graph.get_node(node).is_terminal() && terminal_subset_J[_graph.find_terminal_id(node).value()])
+            // check if J united with {v} also has size <= j+1
+            // this means that |J| = j+1 and v is not a terminal in J
+            if (subset_size == j + 1)
             {
-                continue;
-            }
-
-            // create a graph where v is a terminal node
-            SteinerGraph graph_with_node_as_terminal = _graph;
-            if (!graph_with_node_as_terminal.get_node(node).is_terminal())
-            {
-                graph_with_node_as_terminal.make_terminal(node);
-            }
-
-            // J united with {v} must also have size <= j+1
-            if (graph_with_node_as_terminal.num_terminals() > j + 1)
-            {
-                continue;
+                if (!_graph.get_node(node).is_terminal() || !terminal_subset_J[_graph.find_terminal_id(node).value()])
+                {
+                    continue;
+                }
             }
 
             // compute the SMT with v
@@ -119,6 +110,19 @@ double DijkstraSteiner::get_or_compute_j_terminal_bound(
             LabelKey label_key_with_node = std::make_pair(node, terminal_subset_J);
             if (!_computed_smt_with_extra_node.count(label_key_with_node))
             {
+                // if v is already in J, then we don't need to compute the SMT with v
+                if (_graph.get_node(node).is_terminal() && terminal_subset_J[_graph.find_terminal_id(node).value()])
+                {
+                    continue;
+                }
+
+                // create a graph where v is a terminal node
+                SteinerGraph graph_with_node_as_terminal = _graph;
+                if (!graph_with_node_as_terminal.get_node(node).is_terminal())
+                {
+                    graph_with_node_as_terminal.make_terminal(node);
+                }
+
                 // create a new terminalsubset for J united with {v}
                 const SteinerGraph::TerminalId node_terminal_id = graph_with_node_as_terminal.find_terminal_id(node).value();
                 TerminalSubset terminal_subset_J_with_node = terminal_subset_J;
