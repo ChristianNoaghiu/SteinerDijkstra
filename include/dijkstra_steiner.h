@@ -25,6 +25,18 @@ public:
 
     using TerminalSubset = std::bitset<bitset_length>;
 
+    struct TopologyStruct
+    {
+        SteinerGraph topology;
+        std::vector<bool> existent_nodes;
+        std::vector<SteinerGraph::EdgeTuple> existent_edges;
+        int detour;
+    };
+
+    std::vector<TopologyStruct> compute_topologies_with_max_detour(
+        const SteinerGraph::NodeId r0,
+        const int max_detour);
+
 private:
     SteinerGraph _graph;
     TerminalSubset _all_terminals;
@@ -145,14 +157,6 @@ private:
         const SteinerGraph::NodeId r0,
         const bool _bool,
         const TerminalSubset &terminalsubset);
-
-    struct TopologyStruct
-    {
-        SteinerGraph topology;
-        std::vector<bool> existent_nodes;
-        std::vector<SteinerGraph::EdgeTuple> existent_edges;
-        int detour;
-    };
 
     double compute_compare_bound(
         LabelKeyToIntMap &labels,

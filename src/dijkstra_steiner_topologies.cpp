@@ -20,6 +20,13 @@ double DijkstraSteiner::compute_compare_bound(
     return label + complement_bound;
 }
 
+std::vector<DijkstraSteiner::TopologyStruct> DijkstraSteiner::compute_topologies_with_max_detour(
+    const SteinerGraph::NodeId r0,
+    const int max_detour)
+{
+    return get_topologies(r0, _all_terminals, max_detour);
+}
+
 std::vector<DijkstraSteiner::TopologyStruct> DijkstraSteiner::get_topologies(
     const SteinerGraph::NodeId r0,
     const DijkstraSteiner::TerminalSubset &terminalsubset,
